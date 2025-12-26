@@ -97,7 +97,7 @@ public class RecallFixture
 
             if (!projectionAggregates[projectionName].ContainsKey(context.PrimitiveEvent.Id))
             {
-                projectionAggregates[projectionName].Add(context.PrimitiveEvent.Id, new());
+                projectionAggregates[projectionName].Add(context.PrimitiveEvent.Id, []);
             }
 
             projectionAggregates[projectionName][context.PrimitiveEvent.Id].Add(new(context.PrimitiveEvent, context.Event));
@@ -172,7 +172,7 @@ public class RecallFixture
 
                 builder.SuppressEventProcessorHostedService();
 
-                builder.Options.DurationToSleepWhenIdle = [TimeSpan.FromMilliseconds(25)];
+                builder.Options.ProjectionProcessorIdleDurations = [TimeSpan.FromMilliseconds(25)];
 
                 fixtureConfiguration.AddEventStore?.Invoke(builder);
             })
@@ -615,15 +615,9 @@ public class RecallFixture
         Assert.That(orderProcessStream.IsEmpty, Is.True);
     }
 
-    public class VolumeItem
+    public class VolumeItem(PrimitiveEvent primitiveEvent, ItemAdded itemAdded)
     {
-        public VolumeItem(PrimitiveEvent primitiveEvent, ItemAdded itemAdded)
-        {
-            PrimitiveEvent = primitiveEvent;
-            ItemAdded = itemAdded;
-        }
-
-        public ItemAdded ItemAdded { get; }
-        public PrimitiveEvent PrimitiveEvent { get; }
+        public ItemAdded ItemAdded { get; } = itemAdded;
+        public PrimitiveEvent PrimitiveEvent { get; } = primitiveEvent;
     }
 }

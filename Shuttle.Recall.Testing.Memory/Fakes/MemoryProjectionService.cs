@@ -79,7 +79,7 @@ public class MemoryProjectionService(IPrimitiveEventStore primitiveEventStore, I
             _lock.Release();
         }
 
-        projectionEvent.Projection.Commit(projectionEvent.PrimitiveEvent.SequenceNumber);
+        projectionEvent.Projection.Commit(projectionEvent.PrimitiveEvent.SequenceNumber!.Value);
 
         await Task.CompletedTask;
     }

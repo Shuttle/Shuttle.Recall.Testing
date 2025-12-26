@@ -40,7 +40,7 @@ public class PrimitiveEventStore : IPrimitiveEventStore
 
             _store[primitiveEventJournal.PrimitiveEvent.Id].Add(primitiveEventJournal);
 
-            return primitiveEventJournal.PrimitiveEvent.SequenceNumber;
+            return primitiveEventJournal.PrimitiveEvent.SequenceNumber!.Value;
         }
         finally
         {
@@ -68,7 +68,7 @@ public class PrimitiveEventStore : IPrimitiveEventStore
 
         try
         {
-            return _store.TryGetValue(id, out var value) ? value.Max(item => item.PrimitiveEvent.SequenceNumber) : 0;
+            return _store.TryGetValue(id, out var value) ? value.Max(item => item.PrimitiveEvent.SequenceNumber!.Value) : 0;
         }
         finally
         {

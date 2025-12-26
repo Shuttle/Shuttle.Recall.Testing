@@ -18,6 +18,10 @@ public class MemoryFixture : RecallFixture
             .AddSingleton<MemoryFixtureStartupObserver>();
 
         await ExerciseEventProcessingAsync(new FixtureConfiguration(services)
+            .WithAddEventStore(builder =>
+            {
+                builder.SuppressPrimitiveEventSequencerHostedService();
+            })
             .WithHandlerTimeout(TimeSpan.FromSeconds(5)));
     }
 
@@ -34,7 +38,7 @@ public class MemoryFixture : RecallFixture
         await ExerciseEventProcessingVolumeAsync(new FixtureConfiguration(services)
             .WithAddEventStore(builder =>
             {
-                builder.Options.ProjectionThreadCount = 25;
+                builder.SuppressPrimitiveEventSequencerHostedService();
             })
             .WithHandlerTimeout(TimeSpan.FromMinutes(5)));
     }
@@ -49,7 +53,11 @@ public class MemoryFixture : RecallFixture
             .AddSingleton<IHostedService, MemoryFixtureHostedService>()
             .AddSingleton<MemoryFixtureStartupObserver>();
 
-        await ExerciseEventProcessingWithDelayAsync(new(services));
+        await ExerciseEventProcessingWithDelayAsync(new FixtureConfiguration(services)
+            .WithAddEventStore(builder =>
+            {
+                builder.SuppressPrimitiveEventSequencerHostedService();
+            }));
     }
 
     [Test]
@@ -62,7 +70,11 @@ public class MemoryFixture : RecallFixture
             .AddSingleton<IHostedService, MemoryFixtureHostedService>()
             .AddSingleton<MemoryFixtureStartupObserver>();
 
-        await ExerciseEventProcessingWithFailureAsync(new(services));
+        await ExerciseEventProcessingWithFailureAsync(new FixtureConfiguration(services)
+            .WithAddEventStore(builder =>
+            {
+                builder.SuppressPrimitiveEventSequencerHostedService(); builder.SuppressEventProcessorHostedService();
+            }));
     }
 
     [Test]
@@ -72,6 +84,10 @@ public class MemoryFixture : RecallFixture
             .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
             .AddSingleton<IPrimitiveEventRepository, MemoryPrimitiveEventRepository>();
 
-        await ExerciseStorageAsync(new(services));
+        await ExerciseStorageAsync(new FixtureConfiguration(services)
+            .WithAddEventStore(builder =>
+            {
+                builder.SuppressPrimitiveEventSequencerHostedService();
+            }));
     }
 }
