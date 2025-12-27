@@ -90,4 +90,19 @@ public class MemoryFixture : RecallFixture
                 builder.SuppressPrimitiveEventSequencerHostedService();
             }));
     }
+
+    [Test]
+    public async Task Should_be_able_to_exercise_sequencer_async()
+    {
+        var services = new ServiceCollection()
+            .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
+            .AddSingleton<IPrimitiveEventRepository, MemoryPrimitiveEventRepository>()
+            .AddSingleton<IPrimitiveEventSequencer, MemoryPrimitiveEventSequencer>();
+
+        await ExercisePrimitiveEventSequencerAsync(new FixtureConfiguration(services)
+            .WithAddEventStore(builder =>
+            {
+                builder.Options.PrimitiveEventSequencerIdleDurations = [TimeSpan.FromMilliseconds(25)];
+            }));
+    }
 }

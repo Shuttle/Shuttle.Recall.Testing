@@ -9,7 +9,8 @@ public class FixtureConfiguration(IServiceCollection services)
     public IServiceCollection Services { get; } = Guard.AgainstNull(services);
     public Action<EventStoreBuilder>? AddEventStore { get; private set; }
     public Func<IServiceProvider, Task>? StartingAsync { get; private set; }
-    public TimeSpan HandlerTimeout { get; private set; } = TimeSpan.FromSeconds(5);
+    public TimeSpan EventProcessingHandlerTimeout { get; private set; } = TimeSpan.FromSeconds(5);
+    public TimeSpan PrimitiveEventSequencerTimeout { get; private set; } = TimeSpan.FromSeconds(5);
     public Func<IServiceProvider, Func<Task>, Task>? EventStreamTaskAsync { get; set; }
     public Func<IEventHandlerContext<ItemAdded>, Task>? ItemAddedAsync { get; set; }
     public int VolumeIterationCount { get; set; } = 100;
@@ -28,7 +29,7 @@ public class FixtureConfiguration(IServiceCollection services)
 
     public FixtureConfiguration WithHandlerTimeout(TimeSpan handlerTimeout)
     {
-        HandlerTimeout = handlerTimeout;
+        EventProcessingHandlerTimeout = handlerTimeout;
         return this;
     }
 

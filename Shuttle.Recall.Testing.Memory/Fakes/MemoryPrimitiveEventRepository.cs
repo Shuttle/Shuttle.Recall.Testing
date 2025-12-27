@@ -13,37 +13,23 @@ public class MemoryPrimitiveEventRepository(IPrimitiveEventStore primitiveEventS
         await _primitiveEventStore.RemoveAggregateAsync(id);
     }
 
-    public async ValueTask<long> SaveAsync(IEnumerable<PrimitiveEvent> primitiveEvents, CancellationToken cancellationToken = default)
+    public async Task SaveAsync(IEnumerable<PrimitiveEvent> primitiveEvents, CancellationToken cancellationToken = default)
     {
-        long sequenceNumber = 0;
-
         var primitiveEventJournals = primitiveEvents.Select(item=>new PrimitiveEventJournal(item)).ToList();
 
         foreach (var primitiveEventJournal in primitiveEventJournals)
         {
-            sequenceNumber = await _primitiveEventStore.AddAsync(primitiveEventJournal);
+            await _primitiveEventStore.AddAsync(primitiveEventJournal);
         }
 
         if (Transaction.Current != null)
         {
             Transaction.Current.EnlistVolatile(new PrimitiveEventJournalResourceManager(_primitiveEventStore, primitiveEventJournals), EnlistmentOptions.None);
         }
-
-        return sequenceNumber;
-    }
-
-    public async ValueTask<long> GetMaxSequenceNumberAsync(CancellationToken cancellationToken = default)
-    {
-        return await _primitiveEventStore.GetMaxSequenceNumberAsync();
     }
 
     public async Task<IEnumerable<PrimitiveEvent>> GetAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _primitiveEventStore.GetAsync(id);
-    }
-
-    public async ValueTask<long> GetSequenceNumberAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        return await _primitiveEventStore.GetSequenceNumberAsync(id);
     }
 }

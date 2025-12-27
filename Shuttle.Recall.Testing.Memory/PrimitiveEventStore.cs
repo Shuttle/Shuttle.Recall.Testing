@@ -7,7 +7,8 @@ public class PrimitiveEventStore : IPrimitiveEventStore
 {
     private static long _sequenceNumber = 1;
     private readonly SemaphoreSlim _lock = new(1, 1);
-    private readonly Dictionary<Guid, List<PrimitiveEventJournal>> _store = new();
+    
+    public readonly Dictionary<Guid, List<PrimitiveEventJournal>> Store = new();
 
     public async Task RemoveAggregateAsync(Guid id)
     {
@@ -15,7 +16,7 @@ public class PrimitiveEventStore : IPrimitiveEventStore
 
         try
         {
-            _store.Remove(id);
+            Store.Remove(id);
         }
         finally
         {
@@ -31,14 +32,14 @@ public class PrimitiveEventStore : IPrimitiveEventStore
 
         try
         {
-            if (!_store.ContainsKey(Guard.AgainstNull(primitiveEventJournal.PrimitiveEvent).Id))
+            if (!Store.ContainsKey(Guard.AgainstNull(primitiveEventJournal.PrimitiveEvent).Id))
             {
-                _store.Add(primitiveEventJournal.PrimitiveEvent.Id, []);
+                Store.Add(primitiveEventJournal.PrimitiveEvent.Id, []);
             }
 
             primitiveEventJournal.PrimitiveEvent.SequenceNumber = _sequenceNumber++;
 
-            _store[primitiveEventJournal.PrimitiveEvent.Id].Add(primitiveEventJournal);
+            Store[primitiveEventJournal.PrimitiveEvent.Id].Add(primitiveEventJournal);
 
             return primitiveEventJournal.PrimitiveEvent.SequenceNumber!.Value;
         }
@@ -54,7 +55,7 @@ public class PrimitiveEventStore : IPrimitiveEventStore
 
         try
         {
-            return await Task.FromResult(_store.TryGetValue(id, out var value) ? value.Select(item => item.PrimitiveEvent).ToList() : new());
+            return await Task.FromResult(Store.TryGetValue(id, out var value) ? value.Select(item => item.PrimitiveEvent).ToList() : new());
         }
         finally
         {
@@ -68,7 +69,7 @@ public class PrimitiveEventStore : IPrimitiveEventStore
 
         try
         {
-            return _store.TryGetValue(id, out var value) ? value.Max(item => item.PrimitiveEvent.SequenceNumber!.Value) : 0;
+            return Store.TryGetValue(id, out var value) ? value.Max(item => item.PrimitiveEvent.SequenceNumber!.Value) : 0;
         }
         finally
         {
@@ -82,7 +83,7 @@ public class PrimitiveEventStore : IPrimitiveEventStore
 
         try
         {
-            var primitiveEventJournals = _store.Values.SelectMany(list => list).ToList();
+            var primitiveEventJournals = Store.Values.SelectMany(list => list).ToList();
 
             var uncommittedPrimitiveEventJournal = primitiveEventJournals
                 .OrderBy(item => item.PrimitiveEvent.SequenceNumber)
@@ -106,7 +107,7 @@ public class PrimitiveEventStore : IPrimitiveEventStore
 
         try
         {
-            if (!_store.TryGetValue(id, out var value))
+            if (!Store.TryGetValue(id, out var value))
             {
                 return;
             }

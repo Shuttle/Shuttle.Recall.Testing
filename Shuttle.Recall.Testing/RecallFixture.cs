@@ -60,7 +60,7 @@ public class RecallFixture
 
         var processor = serviceProvider.GetRequiredService<IEventProcessor>();
 
-        handler.Start(fixtureConfiguration.HandlerTimeout);
+        handler.Start(fixtureConfiguration.EventProcessingHandlerTimeout);
 
         await processor.StartAsync().ConfigureAwait(false);
 
@@ -291,7 +291,7 @@ public class RecallFixture
             await Task.WhenAll(tasks).ConfigureAwait(false);
         }
 
-        var timeout = DateTime.Now.Add(fixtureConfiguration.HandlerTimeout);
+        var timeout = DateTime.Now.Add(fixtureConfiguration.EventProcessingHandlerTimeout);
         var hasTimedOut = false;
 
         var expectedProcessedEventCount = fixtureConfiguration.VolumeIterationCount * 25 * 3;
@@ -329,9 +329,7 @@ public class RecallFixture
     ///     Event processing where 2 `ItemAdded` events are added for the correlation id (CID-A) being tested.
     ///     These are followed by events being added to another correlation id (CID-B) but the transaction is delayed.
     ///     We then added 2 more `ItemAdded` events for the correlation id being tested (CID-A).
-    ///     The projection processing should *NOT* process these last two events for CID-A until the transaction for CID-B has
-    ///     been completed.
-    ///     This would preserve the global sequence number tracking of the projection.
+    ///     The global sequence number tracking of the projection should be preserved.
     /// </summary>
     public async Task ExerciseEventProcessingWithDelayAsync(FixtureConfiguration fixtureConfiguration)
     {
@@ -455,7 +453,7 @@ public class RecallFixture
 
         var processor = serviceProvider.GetRequiredService<IEventProcessor>();
 
-        var timeout = DateTime.Now.Add(fixtureConfiguration.HandlerTimeout);
+        var timeout = DateTime.Now.Add(fixtureConfiguration.EventProcessingHandlerTimeout);
         var hasTimedOut = false;
 
         await processor.StartAsync().ConfigureAwait(false);
@@ -517,7 +515,7 @@ public class RecallFixture
 
         var processor = serviceProvider.GetRequiredService<IEventProcessor>();
 
-        handler.Start(fixtureConfiguration.HandlerTimeout);
+        handler.Start(fixtureConfiguration.EventProcessingHandlerTimeout);
 
         await processor.StartAsync().ConfigureAwait(false);
 
@@ -613,6 +611,61 @@ public class RecallFixture
 
         Assert.That(orderStream.IsEmpty, Is.True);
         Assert.That(orderProcessStream.IsEmpty, Is.True);
+    }
+
+    public async Task ExercisePrimitiveEventSequencerAsync(FixtureConfiguration fixtureConfiguration)
+    {
+        const int count = 10;
+
+        Guard.AgainstNull(fixtureConfiguration).Services
+            .ConfigureLogging(nameof(ExerciseStorageAsync))
+            .AddEventStore(builder =>
+            {
+                fixtureConfiguration.AddEventStore?.Invoke(builder);
+
+                builder.SuppressEventProcessorHostedService();
+            });
+
+        var serviceProvider = fixtureConfiguration.Services.BuildServiceProvider();
+
+        await (fixtureConfiguration.StartingAsync?.Invoke(serviceProvider) ?? Task.CompletedTask);
+
+        await serviceProvider.StartHostedServicesAsync().ConfigureAwait(false);
+
+        var eventStore = serviceProvider.GetRequiredService<IEventStore>();
+        var order = new Order.Order(OrderAId);
+        var orderStream = await eventStore.GetAsync(OrderAId).ConfigureAwait(false);
+
+        for (var i = 0; i < count; i++)
+        {
+            orderStream.Add(order.AddItem("item-1", 1, 100));
+            orderStream.Add(order.AddItem("item-2", 2, 200));
+            orderStream.Add(order.AddItem("item-3", 3, 300));
+
+            await eventStore.SaveAsync(orderStream).ConfigureAwait(false);
+
+            await Task.Delay(50);
+        }
+
+        var primitiveEventSequencer = serviceProvider.GetRequiredService<IPrimitiveEventSequencer>();
+        var primitiveEventRepository = serviceProvider.GetRequiredService<IPrimitiveEventRepository>();
+        var timeout = DateTime.Now.Add(fixtureConfiguration.PrimitiveEventSequencerTimeout);
+        var hasTimedOut = false;
+        var done = false;
+
+        while (!done && !hasTimedOut)
+        {
+            await Task.Delay(100);
+
+            var primitiveEvents = await primitiveEventRepository.GetAsync(OrderAId);
+
+            done = primitiveEvents.All(item => item.SequenceNumber.HasValue) &&
+                   await primitiveEventSequencer.GetMaxSequenceNumberAsync() == 3 * count;
+
+            hasTimedOut = DateTime.Now > timeout;
+        }
+
+        Assert.That(hasTimedOut || !done, Is.False, "Sequencing timed out.  Not all of the events have been sequenced.");
     }
 
     public class VolumeItem(PrimitiveEvent primitiveEvent, ItemAdded itemAdded)
