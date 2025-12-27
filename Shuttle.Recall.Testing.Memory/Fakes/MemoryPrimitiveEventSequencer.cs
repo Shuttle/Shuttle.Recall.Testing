@@ -6,10 +6,17 @@ public class MemoryPrimitiveEventSequencer(IPrimitiveEventStore primitiveEventSt
 {
     private readonly PrimitiveEventStore _primitiveEventStore = (PrimitiveEventStore)Guard.AgainstNull(primitiveEventStore);
 
-    public async ValueTask<bool> SequenceAsync(CancellationToken cancellationToken = default)
+    public ValueTask<bool> SequenceAsync(CancellationToken cancellationToken = default)
     {
         var result = false;
-        var sequenceNumber = await GetMaxSequenceNumberAsync(cancellationToken);
+        var sequenceNumber = _primitiveEventStore.Store.Values.Any()
+            ? _primitiveEventStore.Store.Values.Max(journals =>
+                journals
+                    .Where(item => item.Committed)
+                    .Select(item => item.PrimitiveEvent.SequenceNumber ?? 0)
+                    .DefaultIfEmpty(0)
+                    .Max())
+            : 0;
 
         var primitiveEventJournals = _primitiveEventStore.Store.Values
             .SelectMany(journals =>
@@ -23,18 +30,6 @@ public class MemoryPrimitiveEventSequencer(IPrimitiveEventStore primitiveEventSt
             primitiveEventJournal.PrimitiveEvent.SequenceNumber = sequenceNumber;
         }
 
-        return result;
-    }
-
-    public ValueTask<long> GetMaxSequenceNumberAsync(CancellationToken cancellationToken = default)
-    {
-        return ValueTask.FromResult(_primitiveEventStore.Store.Values.Any()
-            ? _primitiveEventStore.Store.Values.Max(journals =>
-                journals
-                    .Where(item => item.Committed)
-                    .Select(item => item.PrimitiveEvent.SequenceNumber ?? 0)
-                    .DefaultIfEmpty(0)
-                    .Max())
-            : 0);
+        return ValueTask.FromResult(result);
     }
 }

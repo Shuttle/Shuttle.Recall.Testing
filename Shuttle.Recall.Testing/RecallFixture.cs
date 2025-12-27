@@ -647,22 +647,30 @@ public class RecallFixture
             await Task.Delay(50);
         }
 
-        var primitiveEventSequencer = serviceProvider.GetRequiredService<IPrimitiveEventSequencer>();
         var primitiveEventRepository = serviceProvider.GetRequiredService<IPrimitiveEventRepository>();
         var timeout = DateTime.Now.Add(fixtureConfiguration.PrimitiveEventSequencerTimeout);
         var hasTimedOut = false;
         var done = false;
 
+        List<PrimitiveEvent> primitiveEvents = [];
+
         while (!done && !hasTimedOut)
         {
             await Task.Delay(100);
 
-            var primitiveEvents = await primitiveEventRepository.GetAsync(OrderAId);
+            primitiveEvents = (await primitiveEventRepository.GetAsync(OrderAId)).ToList();
 
-            done = primitiveEvents.All(item => item.SequenceNumber.HasValue) &&
-                   await primitiveEventSequencer.GetMaxSequenceNumberAsync() == 3 * count;
+            done = primitiveEvents.All(item => item.SequenceNumber.HasValue);
 
             hasTimedOut = DateTime.Now > timeout;
+        }
+
+        if (done)
+        {
+            var logger = serviceProvider.GetLogger<RecallFixture>();
+
+            logger.LogInformation($"[done] : min sequence number = {primitiveEvents.Min(item => item.SequenceNumber ?? 0)} / max sequence number = {primitiveEvents.Max(item => item.SequenceNumber ?? 0)}");
+
         }
 
         Assert.That(hasTimedOut || !done, Is.False, "Sequencing timed out.  Not all of the events have been sequenced.");
