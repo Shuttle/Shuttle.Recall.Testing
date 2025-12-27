@@ -8,7 +8,9 @@ namespace Shuttle.Recall.Testing.Memory;
 public class MemoryFixture : RecallFixture
 {
     [Test]
-    public async Task Should_be_able_to_exercise_event_processing_async()
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task Should_be_able_to_exercise_event_processing_async(bool isTransactional)
     {
         var services = new ServiceCollection()
             .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
@@ -22,11 +24,13 @@ public class MemoryFixture : RecallFixture
             {
                 builder.SuppressPrimitiveEventSequencerHostedService();
             })
-            .WithHandlerTimeout(TimeSpan.FromSeconds(5)));
+            .WithHandlerTimeout(TimeSpan.FromSeconds(5)), isTransactional);
     }
 
     [Test]
-    public async Task Should_be_able_to_exercise_event_processing_volume()
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task Should_be_able_to_exercise_event_processing_volume(bool isTransactional)
     {
         var services = new ServiceCollection()
             .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
@@ -40,11 +44,13 @@ public class MemoryFixture : RecallFixture
             {
                 builder.SuppressPrimitiveEventSequencerHostedService();
             })
-            .WithHandlerTimeout(TimeSpan.FromMinutes(5)));
+            .WithHandlerTimeout(TimeSpan.FromMinutes(5)), isTransactional);
     }
 
     [Test]
-    public async Task Should_be_able_to_exercise_event_processing_with_delay_async()
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task Should_be_able_to_exercise_event_processing_with_delay_async(bool isTransactional)
     {
         var services = new ServiceCollection()
             .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
@@ -57,11 +63,13 @@ public class MemoryFixture : RecallFixture
             .WithAddEventStore(builder =>
             {
                 builder.SuppressPrimitiveEventSequencerHostedService();
-            }));
+            }), isTransactional);
     }
 
     [Test]
-    public async Task Should_be_able_to_exercise_event_processing_with_failure_async()
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task Should_be_able_to_exercise_event_processing_with_failure_async(bool isTransactional)
     {
         var services = new ServiceCollection()
             .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
@@ -74,11 +82,13 @@ public class MemoryFixture : RecallFixture
             .WithAddEventStore(builder =>
             {
                 builder.SuppressPrimitiveEventSequencerHostedService(); builder.SuppressEventProcessorHostedService();
-            }));
+            }), isTransactional);
     }
 
     [Test]
-    public async Task Should_be_able_to_exercise_event_store_async()
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task Should_be_able_to_exercise_event_store_async(bool isTransactional)
     {
         var services = new ServiceCollection()
             .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
@@ -88,11 +98,13 @@ public class MemoryFixture : RecallFixture
             .WithAddEventStore(builder =>
             {
                 builder.SuppressPrimitiveEventSequencerHostedService();
-            }));
+            }), isTransactional);
     }
 
     [Test]
-    public async Task Should_be_able_to_exercise_sequencer_async()
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task Should_be_able_to_exercise_sequencer_async(bool isTransactional)
     {
         var services = new ServiceCollection()
             .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
@@ -103,6 +115,6 @@ public class MemoryFixture : RecallFixture
             .WithAddEventStore(builder =>
             {
                 builder.Options.PrimitiveEventSequencerIdleDurations = [TimeSpan.FromMilliseconds(25)];
-            }));
+            }), isTransactional);
     }
 }

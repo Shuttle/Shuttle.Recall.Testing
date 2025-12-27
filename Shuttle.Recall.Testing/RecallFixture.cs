@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using NUnit.Framework;
 using Shuttle.Core.Contract;
 using Shuttle.Core.Pipelines;
+using Shuttle.Core.TransactionScope;
 using Shuttle.Recall.Testing.Order;
 using Shuttle.Recall.Testing.OrderProcess;
 
@@ -22,12 +23,16 @@ public class RecallFixture
     /// <summary>
     ///     Event processing where 4 `ItemAdded` events are processed by the `OrderHandler` projection.
     /// </summary>
-    public async Task ExerciseEventProcessingAsync(FixtureConfiguration fixtureConfiguration)
+    public async Task ExerciseEventProcessingAsync(FixtureConfiguration fixtureConfiguration, bool isTransactional)
     {
         var handler = new OrderHandler();
 
         var serviceProvider = Guard.AgainstNull(fixtureConfiguration).Services
             .ConfigureLogging(nameof(ExerciseEventProcessingAsync))
+            .AddTransactionScope(builder =>
+            {
+                builder.Options.Enabled = isTransactional;
+            })
             .AddTransient<OrderHandler>()
             .AddEventStore(builder =>
             {
@@ -80,7 +85,7 @@ public class RecallFixture
     ///     Only run this in an environment where you intend clearing/managing the data manually.
     ///     Each iteration of the volume test will add 5 aggregates with 5 events each.
     /// </summary>
-    public async Task ExerciseEventProcessingVolumeAsync(FixtureConfiguration fixtureConfiguration)
+    public async Task ExerciseEventProcessingVolumeAsync(FixtureConfiguration fixtureConfiguration, bool isTransactional)
     {
         var processedEventCountA = 0;
         var processedEventCountB = 0;
@@ -107,6 +112,10 @@ public class RecallFixture
 
         var serviceProvider = Guard.AgainstNull(fixtureConfiguration).Services
             .ConfigureLogging(nameof(ExerciseEventProcessingVolumeAsync))
+            .AddTransactionScope(builder =>
+            {
+                builder.Options.Enabled = isTransactional;
+            })
             .AddTransient<OrderHandler>()
             .AddEventStore(builder =>
             {
@@ -331,12 +340,16 @@ public class RecallFixture
     ///     We then added 2 more `ItemAdded` events for the correlation id being tested (CID-A).
     ///     The global sequence number tracking of the projection should be preserved.
     /// </summary>
-    public async Task ExerciseEventProcessingWithDelayAsync(FixtureConfiguration fixtureConfiguration)
+    public async Task ExerciseEventProcessingWithDelayAsync(FixtureConfiguration fixtureConfiguration, bool isTransactional)
     {
         var processedEventCount = 0;
 
         var serviceProvider = Guard.AgainstNull(fixtureConfiguration).Services
             .ConfigureLogging(nameof(ExerciseEventProcessingWithDelayAsync))
+            .AddTransactionScope(builder =>
+            {
+                builder.Options.Enabled = isTransactional;
+            })
             .AddTransient<OrderHandler>()
             .AddEventStore(builder =>
             {
@@ -476,12 +489,16 @@ public class RecallFixture
     ///     Event processing where 4 `ItemAdded` events are processed by the `OrderHandler` projection.
     ///     However, there is a transient error that occurs during the processing of the 3rd event.
     /// </summary>
-    public async Task ExerciseEventProcessingWithFailureAsync(FixtureConfiguration fixtureConfiguration)
+    public async Task ExerciseEventProcessingWithFailureAsync(FixtureConfiguration fixtureConfiguration, bool isTransactional)
     {
         var handler = new OrderHandler();
 
         var serviceProvider = Guard.AgainstNull(fixtureConfiguration.Services)
             .ConfigureLogging(nameof(ExerciseEventProcessingWithFailureAsync))
+            .AddTransactionScope(builder =>
+            {
+                builder.Options.Enabled = isTransactional;
+            })
             .AddTransient<OrderHandler>()
             .AddEventStore(builder =>
             {
@@ -529,10 +546,14 @@ public class RecallFixture
         Assert.That(handler.HasTimedOut, Is.False, "The handler has timed out.  Not all of the events have been processed by the projection.");
     }
 
-    public async Task ExerciseStorageAsync(FixtureConfiguration fixtureConfiguration)
+    public async Task ExerciseStorageAsync(FixtureConfiguration fixtureConfiguration, bool isTransactional)
     {
         Guard.AgainstNull(fixtureConfiguration).Services
             .ConfigureLogging(nameof(ExerciseStorageAsync))
+            .AddTransactionScope(builder =>
+            {
+                builder.Options.Enabled = isTransactional;
+            })
             .AddEventStore(builder =>
             {
                 fixtureConfiguration.AddEventStore?.Invoke(builder);
@@ -613,12 +634,16 @@ public class RecallFixture
         Assert.That(orderProcessStream.IsEmpty, Is.True);
     }
 
-    public async Task ExercisePrimitiveEventSequencerAsync(FixtureConfiguration fixtureConfiguration)
+    public async Task ExercisePrimitiveEventSequencerAsync(FixtureConfiguration fixtureConfiguration, bool isTransactional)
     {
         const int count = 10;
 
         Guard.AgainstNull(fixtureConfiguration).Services
             .ConfigureLogging(nameof(ExerciseStorageAsync))
+            .AddTransactionScope(builder =>
+            {
+                builder.Options.Enabled = isTransactional;
+            })
             .AddEventStore(builder =>
             {
                 fixtureConfiguration.AddEventStore?.Invoke(builder);

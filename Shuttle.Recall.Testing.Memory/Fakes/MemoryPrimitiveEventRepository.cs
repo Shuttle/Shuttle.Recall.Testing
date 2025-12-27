@@ -15,16 +15,23 @@ public class MemoryPrimitiveEventRepository(IPrimitiveEventStore primitiveEventS
 
     public async Task SaveAsync(IEnumerable<PrimitiveEvent> primitiveEvents, CancellationToken cancellationToken = default)
     {
+        var inTransactionScope = Transaction.Current != null;
+
         var primitiveEventJournals = primitiveEvents.Select(item=>new PrimitiveEventJournal(item)).ToList();
 
         foreach (var primitiveEventJournal in primitiveEventJournals)
         {
+            if (!inTransactionScope)
+            {
+                primitiveEventJournal.Commit();
+            }
+
             await _primitiveEventStore.AddAsync(primitiveEventJournal);
         }
 
-        if (Transaction.Current != null)
+        if (inTransactionScope)
         {
-            Transaction.Current.EnlistVolatile(new PrimitiveEventJournalResourceManager(_primitiveEventStore, primitiveEventJournals), EnlistmentOptions.None);
+            Transaction.Current!.EnlistVolatile(new PrimitiveEventJournalResourceManager(_primitiveEventStore, primitiveEventJournals), EnlistmentOptions.None);
         }
     }
 
