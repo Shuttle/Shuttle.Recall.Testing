@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Options;
 using Shuttle.Core.Contract;
 using Shuttle.Core.Pipelines;
+using Shuttle.Recall.Testing.Memory.Fakes;
 
 namespace Shuttle.Recall.Testing.Memory;
 
@@ -21,7 +22,7 @@ internal class MemoryFixtureHostedService(IOptions<PipelineOptions> pipelineOpti
     {
         if (eventArgs.Pipeline.GetType() == _eventProcessorStartupPipelineType)
         {
-            eventArgs.Pipeline.AddObserver<MemoryFixtureStartupObserver>();
+            eventArgs.Pipeline.AddObserver<MemoryProjectionService>();
         }
 
         return Task.CompletedTask;

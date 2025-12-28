@@ -15,16 +15,16 @@ public class MemoryFixture : RecallFixture
         var services = new ServiceCollection()
             .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
             .AddSingleton<IPrimitiveEventRepository, MemoryPrimitiveEventRepository>()
-            .AddSingleton<IProjectionService, MemoryProjectionService>()
             .AddSingleton<IHostedService, MemoryFixtureHostedService>()
-            .AddSingleton<MemoryFixtureStartupObserver>();
+            .AddSingleton<MemoryProjectionService>()
+            .AddSingleton<IProjectionService>(sp => sp.GetRequiredService<MemoryProjectionService>());
 
         await ExerciseEventProcessingAsync(new FixtureConfiguration(services)
             .WithAddEventStore(builder =>
             {
                 builder.SuppressPrimitiveEventSequencerHostedService();
             })
-            .WithHandlerTimeout(TimeSpan.FromSeconds(5)), isTransactional);
+            .WithEventProcessingHandlerTimeout(TimeSpan.FromSeconds(5)), isTransactional);
     }
 
     [Test]
@@ -35,16 +35,16 @@ public class MemoryFixture : RecallFixture
         var services = new ServiceCollection()
             .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
             .AddSingleton<IPrimitiveEventRepository, MemoryPrimitiveEventRepository>()
-            .AddSingleton<IProjectionService, MemoryProjectionService>()
             .AddSingleton<IHostedService, MemoryFixtureHostedService>()
-            .AddSingleton<MemoryFixtureStartupObserver>();
+            .AddSingleton<MemoryProjectionService>()
+            .AddSingleton<IProjectionService>(sp => sp.GetRequiredService<MemoryProjectionService>());
 
         await ExerciseEventProcessingVolumeAsync(new FixtureConfiguration(services)
             .WithAddEventStore(builder =>
             {
                 builder.SuppressPrimitiveEventSequencerHostedService();
             })
-            .WithHandlerTimeout(TimeSpan.FromMinutes(5)), isTransactional);
+            .WithEventProcessingHandlerTimeout(TimeSpan.FromMinutes(5)), isTransactional);
     }
 
     [Test]
@@ -55,9 +55,9 @@ public class MemoryFixture : RecallFixture
         var services = new ServiceCollection()
             .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
             .AddSingleton<IPrimitiveEventRepository, MemoryPrimitiveEventRepository>()
-            .AddSingleton<IProjectionService, MemoryProjectionService>()
             .AddSingleton<IHostedService, MemoryFixtureHostedService>()
-            .AddSingleton<MemoryFixtureStartupObserver>();
+            .AddSingleton<MemoryProjectionService>()
+            .AddSingleton<IProjectionService>(sp => sp.GetRequiredService<MemoryProjectionService>());
 
         await ExerciseEventProcessingWithDelayAsync(new FixtureConfiguration(services)
             .WithAddEventStore(builder =>
@@ -74,14 +74,15 @@ public class MemoryFixture : RecallFixture
         var services = new ServiceCollection()
             .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
             .AddSingleton<IPrimitiveEventRepository, MemoryPrimitiveEventRepository>()
-            .AddSingleton<IProjectionService, MemoryProjectionService>()
             .AddSingleton<IHostedService, MemoryFixtureHostedService>()
-            .AddSingleton<MemoryFixtureStartupObserver>();
+            .AddSingleton<MemoryProjectionService>()
+            .AddSingleton<IProjectionService>(sp => sp.GetRequiredService<MemoryProjectionService>());
 
         await ExerciseEventProcessingWithFailureAsync(new FixtureConfiguration(services)
             .WithAddEventStore(builder =>
             {
-                builder.SuppressPrimitiveEventSequencerHostedService(); builder.SuppressEventProcessorHostedService();
+                builder.SuppressPrimitiveEventSequencerHostedService(); 
+                builder.SuppressEventProcessorHostedService();
             }), isTransactional);
     }
 
