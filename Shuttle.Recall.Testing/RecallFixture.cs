@@ -179,7 +179,6 @@ public class RecallFixture
                 });
 
                 builder.SuppressEventProcessorHostedService();
-                builder.SuppressPrimitiveEventSequencerHostedService();
 
                 builder.Options.ProjectionProcessorIdleDurations = [TimeSpan.FromMilliseconds(250)];
 

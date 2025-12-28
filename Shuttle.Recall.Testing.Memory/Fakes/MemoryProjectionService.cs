@@ -156,7 +156,7 @@ public class MemoryProjectionService(IOptions<EventStoreOptions> eventStoreOptio
     {
         var processorThreadPool = Guard.AgainstNull(Guard.AgainstNull(pipelineContext).Pipeline.State.Get<IProcessorThreadPool>("EventProcessorThreadPool"));
 
-        List<BalancedProjection> projections = [];
+        List<BalancedProjection> balancedProjections = [];
 
         await _lock.WaitAsync(cancellationToken);
 
@@ -164,11 +164,11 @@ public class MemoryProjectionService(IOptions<EventStoreOptions> eventStoreOptio
         {
             foreach (var projectionConfiguration in _eventProcessorConfiguration.Projections)
             {
-                projections.Add(new(new(projectionConfiguration.Name, 0), _eventStoreOptions.ProjectionProcessorIdleDurations));
+                balancedProjections.Add(new(new(projectionConfiguration.Name, 0), _eventStoreOptions.ProjectionProcessorIdleDurations));
                 _projectionThreadPrimitiveEvents.Add(projectionConfiguration.Name, []);
             }
 
-            _projections = projections.ToArray();
+            _projections = balancedProjections.ToArray();
             _managedThreadIds = processorThreadPool.ProcessorThreads.Select(item => item.ManagedThreadId).ToArray();
         }
         finally
