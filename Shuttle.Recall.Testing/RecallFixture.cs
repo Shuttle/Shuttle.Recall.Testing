@@ -80,8 +80,7 @@ public class RecallFixture
     }
 
     /// <summary>
-    ///     PLEASE NOTE:
-    ///     THIS FIXTURE WOULD NOT CLEAR ANY PREVIOUS RUNS.
+    ///     PLEASE NOTE: THIS FIXTURE WILL NOT CLEAR ANY PREVIOUS RUNS.
     ///     Only run this in an environment where you intend clearing/managing the data manually.
     ///     Each iteration of the volume test will add 5 aggregates with 5 events each.
     /// </summary>
@@ -180,8 +179,9 @@ public class RecallFixture
                 });
 
                 builder.SuppressEventProcessorHostedService();
+                builder.SuppressPrimitiveEventSequencerHostedService();
 
-                builder.Options.ProjectionProcessorIdleDurations = [TimeSpan.FromMilliseconds(25)];
+                builder.Options.ProjectionProcessorIdleDurations = [TimeSpan.FromMilliseconds(250)];
 
                 fixtureConfiguration.AddEventStore?.Invoke(builder);
             })
@@ -250,11 +250,6 @@ public class RecallFixture
         var eventStore = serviceProvider.GetRequiredService<IEventStore>();
 
         var random = new Random();
-
-        int GetDelay()
-        {
-            return random.Next(0, 100) < 25 ? random.Next(20, 100) : 0;
-        }
 
         var logger = serviceProvider.GetLogger<RecallFixture>();
 
@@ -331,6 +326,13 @@ public class RecallFixture
             {
                 Assert.That(aggregate.Value.Select(item => item.PrimitiveEvent.SequenceNumber).ToList(), Is.Ordered, $"Projection '{projectionAggregate.Key}' has aggregate '{aggregate.Key}' where the sequence numbers are not ordered.");
             }
+        }
+
+        return;
+
+        int GetDelay()
+        {
+            return random.Next(0, 100) < 25 ? random.Next(20, 50) : 0;
         }
     }
 
