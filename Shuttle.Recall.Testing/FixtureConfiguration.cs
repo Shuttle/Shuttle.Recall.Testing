@@ -27,9 +27,15 @@ public class FixtureConfiguration(IServiceCollection services)
         return this;
     }
 
-    public FixtureConfiguration WithHandlerTimeout(TimeSpan handlerTimeout)
+    public FixtureConfiguration WithEventProcessingHandlerTimeout(TimeSpan eventProcessingHandlerTimeout)
     {
-        EventProcessingHandlerTimeout = handlerTimeout;
+        EventProcessingHandlerTimeout = eventProcessingHandlerTimeout;
+        return this;
+    }
+
+    public FixtureConfiguration WithPrimitiveEventSequencerTimeout(TimeSpan primitiveEventSequencerTimeout)
+    {
+        PrimitiveEventSequencerTimeout = primitiveEventSequencerTimeout;
         return this;
     }
 
