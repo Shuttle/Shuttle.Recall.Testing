@@ -34,13 +34,13 @@ public class RecallFixture
                 builder.Options.Enabled = isTransactional;
             })
             .AddTransient<OrderHandler>()
-            .AddEventStore(builder =>
+            .AddRecall(builder =>
             {
                 builder.AddProjection("recall-fixture").AddEventHandler(handler);
 
                 builder.SuppressEventProcessorHostedService();
 
-                fixtureConfiguration.AddEventStore?.Invoke(builder);
+                fixtureConfiguration.AddRecall?.Invoke(builder);
             })
             .BuildServiceProvider();
 
@@ -116,7 +116,7 @@ public class RecallFixture
                 builder.Options.Enabled = isTransactional;
             })
             .AddTransient<OrderHandler>()
-            .AddEventStore(builder =>
+            .AddRecall(builder =>
             {
                 builder.AddProjection("recall-fixture-a").AddEventHandler(async (ILogger<RecallFixture> logger, IEventHandlerContext<ItemAdded> context) =>
                 {
@@ -180,9 +180,9 @@ public class RecallFixture
 
                 builder.SuppressEventProcessorHostedService();
 
-                builder.Options.ProjectionProcessorIdleDurations = [TimeSpan.FromMilliseconds(250)];
+                builder.Options.EventProcessing.ProjectionProcessorIdleDurations = [TimeSpan.FromMilliseconds(250)];
 
-                fixtureConfiguration.AddEventStore?.Invoke(builder);
+                fixtureConfiguration.AddRecall?.Invoke(builder);
             })
             .BuildServiceProvider();
 
@@ -352,7 +352,7 @@ public class RecallFixture
                 builder.Options.Enabled = isTransactional;
             })
             .AddTransient<OrderHandler>()
-            .AddEventStore(builder =>
+            .AddRecall(builder =>
             {
                 builder.AddProjection("recall-fixture").AddEventHandler(async (IEventHandlerContext<ItemAdded> context) =>
                 {
@@ -365,7 +365,7 @@ public class RecallFixture
 
                 builder.SuppressEventProcessorHostedService();
 
-                fixtureConfiguration.AddEventStore?.Invoke(builder);
+                fixtureConfiguration.AddRecall?.Invoke(builder);
             })
             .BuildServiceProvider();
 
@@ -501,13 +501,13 @@ public class RecallFixture
                 builder.Options.Enabled = isTransactional;
             })
             .AddTransient<OrderHandler>()
-            .AddEventStore(builder =>
+            .AddRecall(builder =>
             {
                 builder.AddProjection("recall-fixture").AddEventHandler(handler);
 
                 builder.SuppressEventProcessorHostedService();
 
-                fixtureConfiguration.AddEventStore?.Invoke(builder);
+                fixtureConfiguration.AddRecall?.Invoke(builder);
             })
             .AddSingleton<IHostedService, FailureFixtureHostedService>()
             .BuildServiceProvider();
@@ -555,9 +555,9 @@ public class RecallFixture
             {
                 builder.Options.Enabled = isTransactional;
             })
-            .AddEventStore(builder =>
+            .AddRecall(builder =>
             {
-                fixtureConfiguration.AddEventStore?.Invoke(builder);
+                fixtureConfiguration.AddRecall?.Invoke(builder);
 
                 builder.SuppressEventProcessorHostedService();
             });
@@ -645,9 +645,9 @@ public class RecallFixture
             {
                 builder.Options.Enabled = isTransactional;
             })
-            .AddEventStore(builder =>
+            .AddRecall(builder =>
             {
-                fixtureConfiguration.AddEventStore?.Invoke(builder);
+                fixtureConfiguration.AddRecall?.Invoke(builder);
 
                 builder.SuppressEventProcessorHostedService();
             });

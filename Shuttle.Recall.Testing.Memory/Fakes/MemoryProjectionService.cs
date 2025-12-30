@@ -8,10 +8,10 @@ namespace Shuttle.Recall.Testing.Memory.Fakes;
 /// <summary>
 ///     This is a naive implementation of a projection service in that we only have the 'recall-fixture' projection to worry about.
 /// </summary>
-public class MemoryProjectionService(IOptions<EventStoreOptions> eventStoreOptions, IPrimitiveEventStore primitiveEventStore, IEventProcessorConfiguration eventProcessorConfiguration)
+public class MemoryProjectionService(IOptions<RecallOptions> recallOptions, IPrimitiveEventStore primitiveEventStore, IEventProcessorConfiguration eventProcessorConfiguration)
     : IProjectionService, IPipelineObserver<ThreadPoolsStarted>
 {
-    private readonly EventStoreOptions _eventStoreOptions = Guard.AgainstNull(Guard.AgainstNull(eventStoreOptions).Value);
+    private readonly RecallOptions _recallOptions = Guard.AgainstNull(Guard.AgainstNull(recallOptions).Value);
 
     private class BalancedProjection(Projection projection, IEnumerable<TimeSpan> backoffDurations)
     {
@@ -154,7 +154,7 @@ public class MemoryProjectionService(IOptions<EventStoreOptions> eventStoreOptio
 
     public async Task ExecuteAsync(IPipelineContext<ThreadPoolsStarted> pipelineContext, CancellationToken cancellationToken = default)
     {
-        var processorThreadPool = Guard.AgainstNull(Guard.AgainstNull(pipelineContext).Pipeline.State.Get<IProcessorThreadPool>("EventProcessorThreadPool"));
+        var processorThreadPool = Guard.AgainstNull(Guard.AgainstNull(pipelineContext).Pipeline.State.Get<IProcessorThreadPool>("ProjectionProcessorThreadPool"));
 
         List<BalancedProjection> balancedProjections = [];
 
@@ -164,7 +164,7 @@ public class MemoryProjectionService(IOptions<EventStoreOptions> eventStoreOptio
         {
             foreach (var projectionConfiguration in _eventProcessorConfiguration.Projections)
             {
-                balancedProjections.Add(new(new(projectionConfiguration.Name, 0), _eventStoreOptions.ProjectionProcessorIdleDurations));
+                balancedProjections.Add(new(new(projectionConfiguration.Name, 0), _recallOptions.EventProcessing.ProjectionProcessorIdleDurations));
                 _projectionThreadPrimitiveEvents.Add(projectionConfiguration.Name, []);
             }
 
