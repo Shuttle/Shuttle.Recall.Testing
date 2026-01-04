@@ -31,7 +31,10 @@ public class RecallFixture
             .ConfigureLogging(nameof(ExerciseEventProcessingAsync))
             .AddTransactionScope(builder =>
             {
-                builder.Options.Enabled = isTransactional;
+                builder.Configure(options =>
+                {
+                    options.Enabled = isTransactional;
+                });
             })
             .AddTransient<OrderHandler>()
             .AddRecall(builder =>
@@ -113,7 +116,10 @@ public class RecallFixture
             .ConfigureLogging(nameof(ExerciseEventProcessingVolumeAsync))
             .AddTransactionScope(builder =>
             {
-                builder.Options.Enabled = isTransactional;
+                builder.Configure(options =>
+                {
+                    options.Enabled = isTransactional;
+                });
             })
             .AddTransient<OrderHandler>()
             .AddRecall(builder =>
@@ -349,7 +355,10 @@ public class RecallFixture
             .ConfigureLogging(nameof(ExerciseEventProcessingWithDelayAsync))
             .AddTransactionScope(builder =>
             {
-                builder.Options.Enabled = isTransactional;
+                builder.Configure(options =>
+                {
+                    options.Enabled = isTransactional;
+                });
             })
             .AddTransient<OrderHandler>()
             .AddRecall(builder =>
@@ -498,7 +507,10 @@ public class RecallFixture
             .ConfigureLogging(nameof(ExerciseEventProcessingWithFailureAsync))
             .AddTransactionScope(builder =>
             {
-                builder.Options.Enabled = isTransactional;
+                builder.Configure(options =>
+                {
+                    options.Enabled = isTransactional;
+                });
             })
             .AddTransient<OrderHandler>()
             .AddRecall(builder =>
@@ -553,7 +565,10 @@ public class RecallFixture
             .ConfigureLogging(nameof(ExerciseStorageAsync))
             .AddTransactionScope(builder =>
             {
-                builder.Options.Enabled = isTransactional;
+                builder.Configure(options =>
+                {
+                    options.Enabled = isTransactional;
+                });
             })
             .AddRecall(builder =>
             {
@@ -643,7 +658,10 @@ public class RecallFixture
             .ConfigureLogging(nameof(ExerciseStorageAsync))
             .AddTransactionScope(builder =>
             {
-                builder.Options.Enabled = isTransactional;
+                builder.Configure(options =>
+                {
+                    options.Enabled = isTransactional;
+                });
             })
             .AddRecall(builder =>
             {
