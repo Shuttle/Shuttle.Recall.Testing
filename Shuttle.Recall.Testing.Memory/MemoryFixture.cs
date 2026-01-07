@@ -81,7 +81,7 @@ public class MemoryFixture : RecallFixture
         await ExerciseEventProcessingWithFailureAsync(new FixtureConfiguration(services)
             .WithAddRecall(builder =>
             {
-                builder.SuppressPrimitiveEventSequencerHostedService(); 
+                builder.SuppressPrimitiveEventSequencerHostedService();
                 builder.SuppressEventProcessorHostedService();
             }), isTransactional);
     }
