@@ -25,11 +25,11 @@ public static class ServiceProviderExtensions
 
         foreach (var hostedService in serviceProvider.GetServices<IHostedService>())
         {
-            logger.LogInformation($"[HostedService-starting] : {hostedService.GetType().Name}");
+            logger.LogInformation($"[HostedService/Starting] : {hostedService.GetType().Name}");
 
             await hostedService.StartAsync(CancellationToken.None).ConfigureAwait(false);
 
-            logger.LogInformation($"[HostedService-started] : {hostedService.GetType().Name}");
+            logger.LogInformation($"[HostedService/Started] : {hostedService.GetType().Name}");
         }
 
         return serviceProvider;
@@ -43,11 +43,11 @@ public static class ServiceProviderExtensions
 
         foreach (var hostedService in serviceProvider.GetServices<IHostedService>())
         {
-            logger.LogInformation($"[HostedService-stopping] : {hostedService.GetType().Name}");
+            logger.LogInformation($"[HostedService/Stopping] : {hostedService.GetType().Name}");
 
             await hostedService.StopAsync(CancellationToken.None).ConfigureAwait(false);
 
-            logger.LogInformation($"[HostedService-stopped] : {hostedService.GetType().Name}");
+            logger.LogInformation($"[HostedService/Stopped] : {hostedService.GetType().Name}");
         }
 
         return serviceProvider;

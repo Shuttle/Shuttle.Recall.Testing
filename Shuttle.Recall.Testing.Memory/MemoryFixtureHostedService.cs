@@ -22,7 +22,7 @@ internal class MemoryFixtureHostedService(IOptions<PipelineOptions> pipelineOpti
     {
         if (eventArgs.Pipeline.GetType() == _eventProcessorStartupPipelineType)
         {
-            eventArgs.Pipeline.AddObserver<MemoryProjectionService>();
+            eventArgs.Pipeline.AddObserver<MemoryProjectionEventService>();
         }
 
         return Task.CompletedTask;

@@ -10,8 +10,8 @@ namespace Shuttle.Recall.Testing.Memory.Fakes;
 ///     This is a naive implementation of a projection service in that we only have the 'recall-fixture' projection to
 ///     worry about.
 /// </summary>
-public class MemoryProjectionService(ILogger<MemoryProjectionService> logger, IOptions<RecallOptions> recallOptions, IPrimitiveEventStore primitiveEventStore, IEventProcessorConfiguration eventProcessorConfiguration)
-    : IProjectionService, IPipelineObserver<ThreadPoolsStarted>
+public class MemoryProjectionEventService(ILogger<MemoryProjectionEventService> logger, IOptions<RecallOptions> recallOptions, IPrimitiveEventStore primitiveEventStore, IEventProcessorConfiguration eventProcessorConfiguration)
+    : IProjectionEventService, IPipelineObserver<ThreadPoolsStarted>
 {
     private readonly List<ProjectionExecutionContext> _projectionExecutionContexts = [];
     private readonly IEventProcessorConfiguration _eventProcessorConfiguration = Guard.AgainstNull(eventProcessorConfiguration);
@@ -42,7 +42,7 @@ public class MemoryProjectionService(ILogger<MemoryProjectionService> logger, IO
         }
     }
 
-    public async Task<ProjectionEvent?> RetrieveEventAsync(IPipelineContext<RetrieveEvent> pipelineContext, CancellationToken cancellationToken = default)
+    public async Task<ProjectionEvent?> RetrieveAsync(IPipelineContext<RetrieveEvent> pipelineContext, CancellationToken cancellationToken = default)
     {
         var processorThreadManagedThreadId = Guard.AgainstNull(pipelineContext).Pipeline.State.GetProcessorThreadManagedThreadId();
 
@@ -107,7 +107,12 @@ public class MemoryProjectionService(ILogger<MemoryProjectionService> logger, IO
         return null;
     }
 
-    public async Task AcknowledgeEventAsync(IPipelineContext<AcknowledgeEvent> pipelineContext, CancellationToken cancellationToken = default)
+    public Task PipelineFailedAsync(IPipelineContext<PipelineFailed> pipelineContext, CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
+
+    public async Task AcknowledgeAsync(IPipelineContext<AcknowledgeEvent> pipelineContext, CancellationToken cancellationToken = default)
     {
         var projectionEvent = Guard.AgainstNull(pipelineContext).Pipeline.State.GetProjectionEvent();
 

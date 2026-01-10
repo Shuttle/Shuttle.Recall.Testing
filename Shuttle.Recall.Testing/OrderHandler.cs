@@ -22,7 +22,7 @@ public class OrderHandler : IEventHandler<ItemAdded>
         await Task.CompletedTask;
     }
 
-    public void Start(TimeSpan handlerTimeout)
+    public void WithTimeout(TimeSpan handlerTimeout)
     {
         _timeOutDate = DateTime.Now.Add(handlerTimeout);
     }

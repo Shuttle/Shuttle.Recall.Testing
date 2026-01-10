@@ -1,10 +1,11 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Shuttle.Core.Contract;
 using Shuttle.Recall.Testing.Order;
 
 namespace Shuttle.Recall.Testing;
 
-public class FixtureConfiguration(IServiceCollection services)
+public class RecallFixtureOptions(IServiceCollection services)
 {
     public IServiceCollection Services { get; } = Guard.AgainstNull(services);
     public Action<RecallBuilder>? AddRecall { get; private set; }
@@ -15,37 +16,37 @@ public class FixtureConfiguration(IServiceCollection services)
     public Func<IEventHandlerContext<ItemAdded>, Task>? ItemAddedAsync { get; set; }
     public int VolumeIterationCount { get; set; } = 100;
 
-    public FixtureConfiguration WithAddRecall(Action<RecallBuilder> action)
+    public RecallFixtureOptions WithAddRecall(Action<RecallBuilder> action)
     {
         AddRecall = Guard.AgainstNull(action);
         return this;
     }
 
-    public FixtureConfiguration WithStarting(Func<IServiceProvider, Task> starting)
+    public RecallFixtureOptions WithStarting(Func<IServiceProvider, Task> starting)
     {
         StartingAsync = Guard.AgainstNull(starting);
         return this;
     }
 
-    public FixtureConfiguration WithEventProcessingHandlerTimeout(TimeSpan eventProcessingHandlerTimeout)
+    public RecallFixtureOptions WithEventProcessingHandlerTimeout(TimeSpan eventProcessingHandlerTimeout)
     {
         EventProcessingHandlerTimeout = eventProcessingHandlerTimeout;
         return this;
     }
 
-    public FixtureConfiguration WithPrimitiveEventSequencerTimeout(TimeSpan primitiveEventSequencerTimeout)
+    public RecallFixtureOptions WithPrimitiveEventSequencerTimeout(TimeSpan primitiveEventSequencerTimeout)
     {
         PrimitiveEventSequencerTimeout = primitiveEventSequencerTimeout;
         return this;
     }
 
-    public FixtureConfiguration WithEventStreamTask(Func<IServiceProvider, Func<Task>, Task> eventStreamTask)
+    public RecallFixtureOptions WithEventStreamTask(Func<IServiceProvider, Func<Task>, Task> eventStreamTask)
     {
         EventStreamTaskAsync = Guard.AgainstNull(eventStreamTask);
         return this;
     }
 
-    public FixtureConfiguration WithItemAdded(Func<IEventHandlerContext<ItemAdded>, Task> itemAdded)
+    public RecallFixtureOptions WithItemAdded(Func<IEventHandlerContext<ItemAdded>, Task> itemAdded)
     {
         ItemAddedAsync = Guard.AgainstNull(itemAdded);
         return this;
