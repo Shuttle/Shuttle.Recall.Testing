@@ -8,6 +8,8 @@ using Shuttle.Core.Pipelines;
 using Shuttle.Core.TransactionScope;
 using Shuttle.Recall.Testing.Order;
 using Shuttle.Recall.Testing.OrderProcess;
+using System;
+using System.Threading;
 
 namespace Shuttle.Recall.Testing;
 
@@ -581,6 +583,83 @@ public class RecallFixture
         await processor.StopAsync().ConfigureAwait(false);
 
         Assert.That(handler.HasTimedOut, Is.False, "The handler has timed out.  Not all of the events have been processed by the projection.");
+    }
+
+    public async Task ExerciseEventProcessingWithDeferredHandlingAsync(RecallFixtureOptions recallFixtureOptions, bool isTransactional)
+    {
+        var callCount = 0;
+        var serviceProvider = Guard.AgainstNull(recallFixtureOptions.Services)
+            .ConfigureLogging(nameof(ExerciseEventProcessingWithFailureAsync))
+            .AddTransactionScope(builder =>
+            {
+                builder.Configure(options =>
+                {
+                    options.Enabled = isTransactional;
+                });
+            })
+            .AddTransient<OrderHandler>()
+            .AddRecall(builder =>
+            {
+                builder.AddProjection("recall-fixture").AddEventHandler((IEventHandlerContext<ItemAdded> context, CancellationToken cancellationToken = default) =>
+                {
+                    callCount++;
+
+                    if (callCount == 1)
+                    {
+                        context.Defer(TimeSpan.FromSeconds(2));
+                    }
+
+                    return Task.CompletedTask;
+                });
+
+                builder.SuppressEventProcessorHostedService();
+
+                recallFixtureOptions.AddRecall?.Invoke(builder);
+            })
+            .BuildServiceProvider();
+
+        await (recallFixtureOptions.StartingAsync?.Invoke(serviceProvider) ?? Task.CompletedTask);
+
+        await serviceProvider.StartHostedServicesAsync().ConfigureAwait(false);
+
+        var logger = serviceProvider.GetLogger<RecallFixture>();
+        var eventStore = serviceProvider.GetRequiredService<IEventStore>();
+
+        await eventStore.RemoveAsync(OrderAId).ConfigureAwait(false);
+
+        var order = new Order.Order(OrderAId);
+
+        var orderStream = await eventStore.GetAsync(OrderAId).ConfigureAwait(false);
+
+        orderStream.Add(order.AddItem("item-1", 1, 100));
+        orderStream.Add(order.AddItem("item-2", 2, 200));
+        orderStream.Add(order.AddItem("item-3", 3, 300));
+        orderStream.Add(order.AddItem("item-4", 4, 400));
+
+        await eventStore.SaveAsync(orderStream).ConfigureAwait(false);
+
+        var processor = serviceProvider.GetRequiredService<IEventProcessor>();
+
+        var hasTimedOut = false;
+        var startedAt = DateTimeOffset.UtcNow;
+        var timeout = DateTimeOffset.UtcNow.Add(recallFixtureOptions.EventProcessingHandlerTimeout);
+
+        await processor.StartAsync().ConfigureAwait(false);
+
+        while (callCount < 5 && !hasTimedOut)
+        {
+            Thread.Sleep(250);
+            hasTimedOut = DateTimeOffset.UtcNow > timeout;
+        }
+
+        var endedAt = DateTimeOffset.UtcNow;
+
+        await processor.StopAsync().ConfigureAwait(false);
+
+        logger.LogDebug($"[complete] : started at = '{startedAt:O}' / ended at = '{endedAt:O}' / total ms = {(endedAt - startedAt).TotalMilliseconds}");
+
+        Assert.That(hasTimedOut, Is.False, "The handler has timed out.  Not all of the events have been processed by the projection.");
+        Assert.That((endedAt - startedAt).TotalSeconds > 2, Is.True, "Did not defer for 2 seconds.");
     }
 
     public async Task ExerciseStorageAsync(RecallFixtureOptions recallFixtureOptions, bool isTransactional)

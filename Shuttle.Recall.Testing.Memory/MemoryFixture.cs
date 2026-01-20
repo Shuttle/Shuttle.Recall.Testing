@@ -85,6 +85,25 @@ public class MemoryFixture : RecallFixture
                 builder.SuppressEventProcessorHostedService();
             }), isTransactional);
     }
+    [Test]
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task Should_be_able_to_exercise_event_processing_with_deferred_handling_async(bool isTransactional)
+    {
+        var services = new ServiceCollection()
+            .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
+            .AddSingleton<IPrimitiveEventRepository, MemoryPrimitiveEventRepository>()
+            .AddSingleton<IHostedService, MemoryFixtureHostedService>()
+            .AddSingleton<MemoryProjectionEventService>()
+            .AddSingleton<IProjectionEventService>(sp => sp.GetRequiredService<MemoryProjectionEventService>());
+
+        await ExerciseEventProcessingWithDeferredHandlingAsync(new RecallFixtureOptions(services)
+            .WithAddRecall(builder =>
+            {
+                builder.SuppressPrimitiveEventSequencerHostedService();
+                builder.SuppressEventProcessorHostedService();
+            }).WithEventProcessingHandlerTimeout(TimeSpan.FromMinutes(5)), isTransactional);
+    }
 
     [Test]
     [TestCase(true)]

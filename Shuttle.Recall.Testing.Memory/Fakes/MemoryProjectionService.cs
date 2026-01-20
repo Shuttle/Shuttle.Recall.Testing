@@ -62,7 +62,7 @@ public class MemoryProjectionEventService(ILogger<MemoryProjectionEventService> 
                 var currentIndex = (_roundRobinIndex + i) % _projectionExecutionContexts.Count;
                 projectionExecutionContext = _projectionExecutionContexts[currentIndex];
 
-                if (projectionExecutionContext.BackoffTillDate > DateTimeOffset.UtcNow)
+                if (projectionExecutionContext.IsBackingOff())
                 {
                     continue;
                 }
@@ -105,6 +105,29 @@ public class MemoryProjectionEventService(ILogger<MemoryProjectionEventService> 
         _roundRobinIndex = (_roundRobinIndex + 1) % _projectionExecutionContexts.Count;
 
         return null;
+    }
+
+    public async Task DeferAsync(IPipelineContext<HandleEvent> pipelineContext, CancellationToken cancellationToken = new CancellationToken())
+    {
+        var projectionEvent = Guard.AgainstNull(pipelineContext).Pipeline.State.GetProjectionEvent();
+        var deferredUntil = Guard.AgainstNull(pipelineContext).Pipeline.State.GetDeferredUntil();
+
+        if (!deferredUntil.HasValue)
+        {
+            return;
+        }
+
+        await _lock.WaitAsync(cancellationToken);
+
+        try
+        {
+            _projectionExecutionContexts.First(item => item.Projection.Name == projectionEvent.Projection.Name).Backoff(deferredUntil);
+        }
+        finally
+        {
+            _lock.Release();
+        }
+
     }
 
     public Task PipelineFailedAsync(IPipelineContext<PipelineFailed> pipelineContext, CancellationToken cancellationToken = default)
@@ -196,8 +219,14 @@ public class MemoryProjectionEventService(ILogger<MemoryProjectionEventService> 
             primitiveEvents.Add(Guard.AgainstNull(primitiveEvent));
         }
 
-        public void Backoff()
+        public void Backoff(DateTimeOffset? deferredUntil = null)
         {
+            if (deferredUntil.HasValue)
+            {
+                BackoffTillDate = deferredUntil.Value;
+                return;
+            }
+
             if (_durationIndex >= _durations.Length)
             {
                 _durationIndex = _durations.Length - 1;
@@ -240,6 +269,11 @@ public class MemoryProjectionEventService(ILogger<MemoryProjectionEventService> 
             }
 
             return primitiveEvents.OrderBy(item => item.SequenceNumber).FirstOrDefault();
+        }
+
+        public bool IsBackingOff()
+        {
+            return BackoffTillDate > DateTimeOffset.UtcNow;
         }
     }
 }
