@@ -107,7 +107,7 @@ public class MemoryProjectionEventService(ILogger<MemoryProjectionEventService> 
         return null;
     }
 
-    public async Task DeferAsync(IPipelineContext<HandleEvent> pipelineContext, CancellationToken cancellationToken = new CancellationToken())
+    public async Task DeferAsync(IPipelineContext<HandleEvent> pipelineContext, CancellationToken cancellationToken = default)
     {
         var projectionEvent = Guard.AgainstNull(pipelineContext).Pipeline.State.GetProjectionEvent();
         var deferredUntil = Guard.AgainstNull(pipelineContext).Pipeline.State.GetDeferredUntil();
@@ -195,7 +195,7 @@ public class MemoryProjectionEventService(ILogger<MemoryProjectionEventService> 
 
         private readonly Dictionary<int, List<PrimitiveEvent>> _threadPrimitiveEvents = [];
         private int _durationIndex;
-        public DateTimeOffset BackoffTillDate { get; private set; } = DateTimeOffset.MinValue;
+        private DateTimeOffset _backoffTillDate = DateTimeOffset.MinValue;
 
         public bool IsEmpty => _threadPrimitiveEvents.Values.All(list => list.Count == 0);
         public SemaphoreSlim Lock { get; } = new(1, 1);
@@ -223,7 +223,7 @@ public class MemoryProjectionEventService(ILogger<MemoryProjectionEventService> 
         {
             if (deferredUntil.HasValue)
             {
-                BackoffTillDate = deferredUntil.Value;
+                _backoffTillDate = deferredUntil.Value;
                 return;
             }
 
@@ -232,7 +232,7 @@ public class MemoryProjectionEventService(ILogger<MemoryProjectionEventService> 
                 _durationIndex = _durations.Length - 1;
             }
 
-            BackoffTillDate = DateTimeOffset.UtcNow.Add(_durations[_durationIndex++]);
+            _backoffTillDate = DateTimeOffset.UtcNow.Add(_durations[_durationIndex++]);
         }
 
         public void RemovePrimitiveEvent(PrimitiveEvent primitiveEvent)
@@ -250,7 +250,7 @@ public class MemoryProjectionEventService(ILogger<MemoryProjectionEventService> 
 
         public void Resume()
         {
-            BackoffTillDate = DateTimeOffset.MinValue;
+            _backoffTillDate = DateTimeOffset.MinValue;
             _durationIndex = 0;
         }
 
@@ -273,7 +273,7 @@ public class MemoryProjectionEventService(ILogger<MemoryProjectionEventService> 
 
         public bool IsBackingOff()
         {
-            return BackoffTillDate > DateTimeOffset.UtcNow;
+            return _backoffTillDate > DateTimeOffset.UtcNow;
         }
     }
 }

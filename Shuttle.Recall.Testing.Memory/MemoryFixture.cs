@@ -85,6 +85,7 @@ public class MemoryFixture : RecallFixture
                 builder.SuppressEventProcessorHostedService();
             }), isTransactional);
     }
+
     [Test]
     [TestCase(true)]
     [TestCase(false)]
@@ -102,7 +103,7 @@ public class MemoryFixture : RecallFixture
             {
                 builder.SuppressPrimitiveEventSequencerHostedService();
                 builder.SuppressEventProcessorHostedService();
-            }).WithEventProcessingHandlerTimeout(TimeSpan.FromMinutes(5)), isTransactional);
+            }), isTransactional);
     }
 
     [Test]
