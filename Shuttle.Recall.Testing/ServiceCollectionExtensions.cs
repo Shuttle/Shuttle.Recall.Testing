@@ -3,8 +3,6 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 using Shuttle.Core.Contract;
-using Shuttle.Core.Pipelines.Logging;
-using Shuttle.Recall.Logging;
 
 namespace Shuttle.Recall.Testing;
 
@@ -20,8 +18,6 @@ public static class ServiceCollectionExtensions
             services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, ConsoleLoggerProvider>());
 
             services
-                .AddPipelineLogging()
-                .AddRecallLogging()
                 .AddLogging(builder =>
                 {
                     builder.SetMinimumLevel(LogLevel.Trace);
