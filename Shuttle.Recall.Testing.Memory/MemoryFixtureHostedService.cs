@@ -13,12 +13,12 @@ internal class MemoryFixtureHostedService(IOptions<PipelineOptions> pipelineOpti
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _pipelineOptions.PipelineCreated += PipelineCreated;
+        _pipelineOptions.PipelineStarting += PipelineStarting;
 
         return Task.CompletedTask;
     }
 
-    private Task PipelineCreated(PipelineEventArgs eventArgs, CancellationToken cancellationToken)
+    private Task PipelineStarting(PipelineEventArgs eventArgs, CancellationToken cancellationToken)
     {
         if (eventArgs.Pipeline.GetType() == _eventProcessorStartupPipelineType)
         {
@@ -30,7 +30,7 @@ internal class MemoryFixtureHostedService(IOptions<PipelineOptions> pipelineOpti
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        _pipelineOptions.PipelineCreated -= PipelineCreated;
+        _pipelineOptions.PipelineStarting -= PipelineStarting;
 
         await Task.CompletedTask;
     }

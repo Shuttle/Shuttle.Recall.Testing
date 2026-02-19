@@ -200,7 +200,7 @@ public class RecallFixture
 
         var idleProcessorThreads = new Dictionary<int, bool>();
 
-        pipelineOptions.PipelineCreated += (eventArgs, _) =>
+        pipelineOptions.PipelineStarting += (eventArgs, _) =>
         {
             var pipelineType = eventArgs.Pipeline.GetType();
 

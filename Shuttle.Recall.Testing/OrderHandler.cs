@@ -10,7 +10,7 @@ public class OrderHandler : IEventHandler<ItemAdded>
 
     public bool IsComplete => _events.Count == 4;
 
-    public async Task ProcessEventAsync(IEventHandlerContext<ItemAdded> context, CancellationToken cancellationToken = default)
+    public async Task HandleAsync(IEventHandlerContext<ItemAdded> context, CancellationToken cancellationToken = default)
     {
         if (_events.FirstOrDefault(item => item.Product.Equals(context.Event.Product, StringComparison.InvariantCultureIgnoreCase)) != null)
         {

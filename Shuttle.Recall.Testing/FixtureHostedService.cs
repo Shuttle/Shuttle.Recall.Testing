@@ -11,7 +11,7 @@ internal class FailureFixtureHostedService(IOptions<PipelineOptions> pipelineOpt
     private readonly Type _eventProcessingPipelineType = typeof(EventProcessingPipeline);
     private readonly FailureFixtureObserver _failureFixtureObserver = new(); // need a singleton for FixtureObserver._failedBefore
 
-    private Task PipelineCreated(PipelineEventArgs eventArgs, CancellationToken cancellationToken)
+    private Task PipelineStarting(PipelineEventArgs eventArgs, CancellationToken cancellationToken)
     {
         if (eventArgs.Pipeline.GetType() == _eventProcessingPipelineType)
         {
@@ -23,13 +23,13 @@ internal class FailureFixtureHostedService(IOptions<PipelineOptions> pipelineOpt
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _pipelineOptions.PipelineCreated += PipelineCreated;
+        _pipelineOptions.PipelineStarting += PipelineStarting;
         return Task.CompletedTask;
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        _pipelineOptions.PipelineCreated -= PipelineCreated;
+        _pipelineOptions.PipelineStarting -= PipelineStarting;
 
         return Task.CompletedTask;
     }
