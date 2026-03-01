@@ -8,9 +8,12 @@ public class MemoryPrimitiveEventRepository(IPrimitiveEventStore primitiveEventS
     private readonly IPrimitiveEventStore _primitiveEventStore = Guard.AgainstNull(primitiveEventStore);
 
 
-    public async Task RemoveAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task RemoveAsync(PrimitiveEvent.Specification specification, CancellationToken cancellationToken = default)
     {
-        await _primitiveEventStore.RemoveAggregateAsync(id);
+        foreach (var id in specification.Ids)
+        {
+            await _primitiveEventStore.RemoveAggregateAsync(id);
+        }
     }
 
     public async Task SaveAsync(IEnumerable<PrimitiveEvent> primitiveEvents, CancellationToken cancellationToken = default)
