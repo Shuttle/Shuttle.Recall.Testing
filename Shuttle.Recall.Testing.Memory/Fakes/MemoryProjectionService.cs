@@ -31,7 +31,7 @@ public class MemoryProjectionEventService(ILogger<MemoryProjectionEventService> 
         {
             foreach (var projectionConfiguration in _eventProcessorConfiguration.Projections)
             {
-                _projectionExecutionContexts.Add(new(new(projectionConfiguration.Name, 0), _recallOptions.EventProcessing.ProjectionProcessorIdleDurations));
+                _projectionExecutionContexts.Add(new(new(projectionConfiguration.Name, 0), _recallOptions.EventProcessing.ProjectionProcessorIdleDurations.Count > 0 ? _recallOptions.EventProcessing.ProjectionProcessorIdleDurations : EventProcessingOptions.DefaultProjectionProcessorIdleDurations));
             }
 
             _managedThreadIds = processorThreadPool.ProcessorThreads.Select(item => item.ManagedThreadId).ToArray();

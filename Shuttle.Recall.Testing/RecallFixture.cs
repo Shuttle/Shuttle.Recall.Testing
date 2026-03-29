@@ -188,7 +188,10 @@ public class RecallFixture
 
                 builder.SuppressEventProcessorHostedService();
 
-                builder.Options.EventProcessing.ProjectionProcessorIdleDurations = [TimeSpan.FromMilliseconds(250)];
+                builder.Configure(options =>
+                {
+                    options.EventProcessing.ProjectionProcessorIdleDurations = [TimeSpan.FromMilliseconds(250)];
+                });
 
                 recallFixtureOptions.AddRecall?.Invoke(builder);
             })
@@ -600,7 +603,7 @@ public class RecallFixture
             .AddTransient<OrderHandler>()
             .AddRecall(builder =>
             {
-                builder.AddProjection("recall-fixture").AddEventHandler((IEventHandlerContext<ItemAdded> context, CancellationToken cancellationToken = default) =>
+                builder.AddProjection("recall-fixture").AddEventHandler((IEventHandlerContext<ItemAdded> context, CancellationToken _ = default) =>
                 {
                     callCount++;
 

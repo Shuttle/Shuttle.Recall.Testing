@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using NUnit.Framework;
 using Shuttle.Recall.Testing.Memory.Fakes;
 
@@ -135,7 +136,10 @@ public class MemoryFixture : RecallFixture
         await ExercisePrimitiveEventSequencerAsync(new RecallFixtureOptions(services)
             .WithAddRecall(builder =>
             {
-                builder.Options.EventStore.PrimitiveEventSequencerIdleDurations = [TimeSpan.FromMilliseconds(25)];
+                builder.Configure(options =>
+                {
+                    options.EventStore.PrimitiveEventSequencerIdleDurations = [TimeSpan.FromMilliseconds(25)];
+                });
             }), isTransactional);
     }
 }
