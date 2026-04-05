@@ -5,7 +5,6 @@ using Microsoft.Extensions.Options;
 using NUnit.Framework;
 using Shuttle.Core.Contract;
 using Shuttle.Core.Pipelines;
-using Shuttle.Core.TransactionScope;
 using Shuttle.Recall.Testing.Order;
 using Shuttle.Recall.Testing.OrderProcess;
 
@@ -23,19 +22,11 @@ public class RecallFixture
     /// <summary>
     ///     Event processing where 4 `ItemAdded` events are processed by the `OrderHandler` projection.
     /// </summary>
-    public async Task ExerciseEventProcessingAsync(RecallFixtureOptions recallFixtureOptions, bool isTransactional)
+    public async Task ExerciseEventProcessingAsync(RecallFixtureOptions recallFixtureOptions)
     {
         var handler = new OrderHandler();
 
         var serviceProvider = Guard.AgainstNull(recallFixtureOptions).Services
-            .ConfigureLogging(nameof(ExerciseEventProcessingAsync))
-            .AddTransactionScope(builder =>
-            {
-                builder.Configure(options =>
-                {
-                    options.Enabled = isTransactional;
-                });
-            })
             .AddTransient<OrderHandler>()
             .AddRecall()
             .AddProjection("recall-fixture", builder =>
@@ -85,7 +76,7 @@ public class RecallFixture
     ///     Only run this in an environment where you intend clearing/managing the data manually.
     ///     Each iteration of the volume test will add 5 aggregates with 5 events each.
     /// </summary>
-    public async Task ExerciseEventProcessingVolumeAsync(RecallFixtureOptions recallFixtureOptions, bool isTransactional)
+    public async Task ExerciseEventProcessingVolumeAsync(RecallFixtureOptions recallFixtureOptions)
     {
         var processedEventCountA = 0;
         var processedEventCountB = 0;
@@ -111,14 +102,6 @@ public class RecallFixture
         }
 
         var serviceProvider = Guard.AgainstNull(recallFixtureOptions).Services
-            .ConfigureLogging(nameof(ExerciseEventProcessingVolumeAsync))
-            .AddTransactionScope(builder =>
-            {
-                builder.Configure(options =>
-                {
-                    options.Enabled = isTransactional;
-                });
-            })
             .AddTransient<OrderHandler>()
             .AddRecall(options =>
             {
@@ -126,7 +109,7 @@ public class RecallFixture
             })
             .AddProjection("recall-fixture-a", builder =>
             {
-                builder.AddEventHandler(async (ILogger<RecallFixture> logger, IEventHandlerContext<ItemAdded> context) =>
+                builder.AddEventHandler(async (IEventHandlerContext<ItemAdded> context, IServiceProvider serviceProvider) =>
                 {
                     await semaphore.WaitAsync();
 
@@ -136,7 +119,7 @@ public class RecallFixture
 
                         await AddProcessedItem("recall-fixture-a", context);
 
-                        logger.LogDebug($"[recall-fixture-a] : event count = {processedEventCountA} / aggregate id = '{context.PrimitiveEvent.Id}' / product = '{context.Event.Product}' / sequence number = {context.PrimitiveEvent.SequenceNumber}");
+                        serviceProvider.GetService<ILogger<RecallFixture>>()?.LogDebug($"[recall-fixture-a] : event count = {processedEventCountA} / aggregate id = '{context.PrimitiveEvent.Id}' / product = '{context.Event.Product}' / sequence number = {context.PrimitiveEvent.SequenceNumber}");
                     }
                     finally
                     {
@@ -147,7 +130,7 @@ public class RecallFixture
                 });
             })
             .AddProjection("recall-fixture-b", builder =>
-                builder.AddEventHandler(async (ILogger<RecallFixture> logger, IEventHandlerContext<ItemAdded> context) =>
+                builder.AddEventHandler(async (IEventHandlerContext<ItemAdded> context, IServiceProvider serviceProvider) =>
                 {
                     await semaphore.WaitAsync();
 
@@ -157,7 +140,7 @@ public class RecallFixture
 
                         await AddProcessedItem("recall-fixture-b", context);
 
-                        logger.LogDebug($"[recall-fixture-b] : event count = {processedEventCountB} / aggregate id = '{context.PrimitiveEvent.Id}' / product = '{context.Event.Product}' / sequence number = {context.PrimitiveEvent.SequenceNumber}");
+                        serviceProvider.GetService<ILogger<RecallFixture>>()?.LogDebug($"[recall-fixture-b] : event count = {processedEventCountB} / aggregate id = '{context.PrimitiveEvent.Id}' / product = '{context.Event.Product}' / sequence number = {context.PrimitiveEvent.SequenceNumber}");
                     }
                     finally
                     {
@@ -168,7 +151,7 @@ public class RecallFixture
                 }))
             .AddProjection("recall-fixture-c", builder =>
             {
-                builder.AddEventHandler(async (ILogger<RecallFixture> logger, IEventHandlerContext<ItemAdded> context) =>
+                builder.AddEventHandler(async (IEventHandlerContext<ItemAdded> context, IServiceProvider serviceProvider) =>
                 {
                     await semaphore.WaitAsync();
 
@@ -178,7 +161,7 @@ public class RecallFixture
 
                         await AddProcessedItem("recall-fixture-c", context);
 
-                        logger.LogDebug($"[recall-fixture-c] : event count = {processedEventCountC} / aggregate id = '{context.PrimitiveEvent.Id}' / product = '{context.Event.Product}' / sequence number = {context.PrimitiveEvent.SequenceNumber}");
+                        serviceProvider.GetService<ILogger<RecallFixture>>()?.LogDebug($"[recall-fixture-c] : event count = {processedEventCountC} / aggregate id = '{context.PrimitiveEvent.Id}' / product = '{context.Event.Product}' / sequence number = {context.PrimitiveEvent.SequenceNumber}");
                     }
                     finally
                     {
@@ -344,18 +327,10 @@ public class RecallFixture
         }
     }
 
-    public async Task ExerciseEventProcessingWithDeferredHandlingAsync(RecallFixtureOptions recallFixtureOptions, bool isTransactional)
+    public async Task ExerciseEventProcessingWithDeferredHandlingAsync(RecallFixtureOptions recallFixtureOptions)
     {
         var callCount = 0;
         var serviceProvider = Guard.AgainstNull(recallFixtureOptions.Services)
-            .ConfigureLogging(nameof(ExerciseEventProcessingWithFailureAsync))
-            .AddTransactionScope(builder =>
-            {
-                builder.Configure(options =>
-                {
-                    options.Enabled = isTransactional;
-                });
-            })
             .AddTransient<OrderHandler>()
             .AddRecall()
             .AddProjection("recall-fixture", builder =>
@@ -425,19 +400,11 @@ public class RecallFixture
     ///     We then added 2 more `ItemAdded` events for the correlation id being tested (CID-A).
     ///     The global sequence number tracking of the projection should be preserved.
     /// </summary>
-    public async Task ExerciseEventProcessingWithDelayAsync(RecallFixtureOptions recallFixtureOptions, bool isTransactional)
+    public async Task ExerciseEventProcessingWithDelayAsync(RecallFixtureOptions recallFixtureOptions)
     {
         var processedEventCount = 0;
 
         var serviceProvider = Guard.AgainstNull(recallFixtureOptions).Services
-            .ConfigureLogging(nameof(ExerciseEventProcessingWithDelayAsync))
-            .AddTransactionScope(builder =>
-            {
-                builder.Configure(options =>
-                {
-                    options.Enabled = isTransactional;
-                });
-            })
             .AddTransient<OrderHandler>()
             .AddRecall()
             .AddProjection("recall-fixture", builder =>
@@ -595,19 +562,11 @@ public class RecallFixture
     ///     Event processing where 4 `ItemAdded` events are processed by the `OrderHandler` projection.
     ///     However, there is a transient error that occurs during the processing of the 3rd event.
     /// </summary>
-    public async Task ExerciseEventProcessingWithFailureAsync(RecallFixtureOptions recallFixtureOptions, bool isTransactional)
+    public async Task ExerciseEventProcessingWithFailureAsync(RecallFixtureOptions recallFixtureOptions)
     {
         var handler = new OrderHandler();
 
         var serviceProvider = Guard.AgainstNull(recallFixtureOptions.Services)
-            .ConfigureLogging(nameof(ExerciseEventProcessingWithFailureAsync))
-            .AddTransactionScope(builder =>
-            {
-                builder.Configure(options =>
-                {
-                    options.Enabled = isTransactional;
-                });
-            })
             .AddTransient<OrderHandler>()
             .AddRecall()
             .AddProjection("recall-fixture", builder =>
@@ -653,21 +612,11 @@ public class RecallFixture
         Assert.That(handler.HasTimedOut, Is.False, "The handler has timed out.  Not all of the events have been processed by the projection.");
     }
 
-    public async Task ExercisePrimitiveEventSequencerAsync(RecallFixtureOptions recallFixtureOptions, bool isTransactional)
+    public async Task ExercisePrimitiveEventSequencerAsync(RecallFixtureOptions recallFixtureOptions)
     {
         const int count = 10;
 
-        Guard.AgainstNull(recallFixtureOptions).Services
-            .ConfigureLogging(nameof(ExerciseStorageAsync))
-            .AddTransactionScope(builder =>
-            {
-                builder.Configure(options =>
-                {
-                    options.Enabled = isTransactional;
-                });
-            });
-
-        var serviceProvider = recallFixtureOptions.Services.BuildServiceProvider();
+        var serviceProvider = Guard.AgainstNull(recallFixtureOptions).Services.BuildServiceProvider();
 
         await (recallFixtureOptions.StartingAsync?.Invoke(serviceProvider) ?? Task.CompletedTask);
 
@@ -716,19 +665,9 @@ public class RecallFixture
         Assert.That(hasTimedOut || !done, Is.False, "Sequencing timed out.  Not all of the events have been sequenced.");
     }
 
-    public async Task ExerciseStorageAsync(RecallFixtureOptions recallFixtureOptions, bool isTransactional)
+    public async Task ExerciseStorageAsync(RecallFixtureOptions recallFixtureOptions)
     {
-        Guard.AgainstNull(recallFixtureOptions).Services
-            .ConfigureLogging(nameof(ExerciseStorageAsync))
-            .AddTransactionScope(builder =>
-            {
-                builder.Configure(options =>
-                {
-                    options.Enabled = isTransactional;
-                });
-            });
-
-        var serviceProvider = recallFixtureOptions.Services.BuildServiceProvider();
+        var serviceProvider = Guard.AgainstNull(recallFixtureOptions).Services.BuildServiceProvider();
 
         await (recallFixtureOptions.StartingAsync?.Invoke(serviceProvider) ?? Task.CompletedTask);
 

@@ -8,9 +8,7 @@ namespace Shuttle.Recall.Testing.Memory;
 public class MemoryFixture : RecallFixture
 {
     [Test]
-    [TestCase(true)]
-    [TestCase(false)]
-    public async Task Should_be_able_to_exercise_event_processing_async(bool isTransactional)
+    public async Task Should_be_able_to_exercise_event_processing_async()
     {
         var services = new ServiceCollection()
             .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
@@ -20,13 +18,11 @@ public class MemoryFixture : RecallFixture
             .AddSingleton<IProjectionEventService>(sp => sp.GetRequiredService<MemoryProjectionEventService>());
 
         await ExerciseEventProcessingAsync(new RecallFixtureOptions(services)
-            .WithEventProcessingHandlerTimeout(TimeSpan.FromSeconds(5)), isTransactional);
+            .WithEventProcessingHandlerTimeout(TimeSpan.FromSeconds(5)));
     }
 
     [Test]
-    [TestCase(true)]
-    [TestCase(false)]
-    public async Task Should_be_able_to_exercise_event_processing_volume(bool isTransactional)
+    public async Task Should_be_able_to_exercise_event_processing_volume()
     {
         var services = new ServiceCollection()
             .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
@@ -36,13 +32,11 @@ public class MemoryFixture : RecallFixture
             .AddSingleton<IProjectionEventService>(sp => sp.GetRequiredService<MemoryProjectionEventService>());
 
         await ExerciseEventProcessingVolumeAsync(new RecallFixtureOptions(services)
-            .WithEventProcessingHandlerTimeout(TimeSpan.FromMinutes(5)), isTransactional);
+            .WithEventProcessingHandlerTimeout(TimeSpan.FromMinutes(5)));
     }
 
     [Test]
-    [TestCase(true)]
-    [TestCase(false)]
-    public async Task Should_be_able_to_exercise_event_processing_with_delay_async(bool isTransactional)
+    public async Task Should_be_able_to_exercise_event_processing_with_delay_async()
     {
         var services = new ServiceCollection()
             .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
@@ -51,13 +45,11 @@ public class MemoryFixture : RecallFixture
             .AddSingleton<MemoryProjectionEventService>()
             .AddSingleton<IProjectionEventService>(sp => sp.GetRequiredService<MemoryProjectionEventService>());
 
-        await ExerciseEventProcessingWithDelayAsync(new(services), isTransactional);
+        await ExerciseEventProcessingWithDelayAsync(new(services));
     }
 
     [Test]
-    [TestCase(true)]
-    [TestCase(false)]
-    public async Task Should_be_able_to_exercise_event_processing_with_failure_async(bool isTransactional)
+    public async Task Should_be_able_to_exercise_event_processing_with_failure_async()
     {
         var services = new ServiceCollection()
             .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
@@ -66,13 +58,11 @@ public class MemoryFixture : RecallFixture
             .AddSingleton<MemoryProjectionEventService>()
             .AddSingleton<IProjectionEventService>(sp => sp.GetRequiredService<MemoryProjectionEventService>());
 
-        await ExerciseEventProcessingWithFailureAsync(new(services), isTransactional);
+        await ExerciseEventProcessingWithFailureAsync(new(services));
     }
 
     [Test]
-    [TestCase(true)]
-    [TestCase(false)]
-    public async Task Should_be_able_to_exercise_event_processing_with_deferred_handling_async(bool isTransactional)
+    public async Task Should_be_able_to_exercise_event_processing_with_deferred_handling_async()
     {
         var services = new ServiceCollection()
             .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
@@ -81,13 +71,11 @@ public class MemoryFixture : RecallFixture
             .AddSingleton<MemoryProjectionEventService>()
             .AddSingleton<IProjectionEventService>(sp => sp.GetRequiredService<MemoryProjectionEventService>());
 
-        await ExerciseEventProcessingWithDeferredHandlingAsync(new(services), isTransactional);
+        await ExerciseEventProcessingWithDeferredHandlingAsync(new(services));
     }
 
     [Test]
-    [TestCase(true)]
-    [TestCase(false)]
-    public async Task Should_be_able_to_exercise_event_store_async(bool isTransactional)
+    public async Task Should_be_able_to_exercise_event_store_async()
     {
         var services = new ServiceCollection()
             .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
@@ -95,13 +83,11 @@ public class MemoryFixture : RecallFixture
             .AddRecall()
             .Services;
 
-        await ExerciseStorageAsync(new(services), isTransactional);
+        await ExerciseStorageAsync(new(services));
     }
 
     [Test]
-    [TestCase(true)]
-    [TestCase(false)]
-    public async Task Should_be_able_to_exercise_sequencer_async(bool isTransactional)
+    public async Task Should_be_able_to_exercise_sequencer_async()
     {
         var services = new ServiceCollection()
             .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
@@ -113,6 +99,6 @@ public class MemoryFixture : RecallFixture
             })
             .Services;
 
-        await ExercisePrimitiveEventSequencerAsync(new(services), isTransactional);
+        await ExercisePrimitiveEventSequencerAsync(new(services));
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Shuttle.Core.Contract;
 using Shuttle.Core.Pipelines;
@@ -10,7 +11,7 @@ namespace Shuttle.Recall.Testing.Memory.Fakes;
 ///     This is a naive implementation of a projection service in that we only have the 'recall-fixture' projection to
 ///     worry about.
 /// </summary>
-public class MemoryProjectionEventService(ILogger<MemoryProjectionEventService> logger, IOptions<RecallOptions> recallOptions, IPrimitiveEventStore primitiveEventStore, IEventProcessorConfiguration eventProcessorConfiguration)
+public class MemoryProjectionEventService(IOptions<RecallOptions> recallOptions, IPrimitiveEventStore primitiveEventStore, IEventProcessorConfiguration eventProcessorConfiguration, ILogger<MemoryProjectionEventService>? logger = null)
     : IProjectionEventService, IPipelineObserver<ThreadPoolsStarted>
 {
     private readonly List<ProjectionExecutionContext> _projectionExecutionContexts = [];
@@ -18,6 +19,7 @@ public class MemoryProjectionEventService(ILogger<MemoryProjectionEventService> 
     private readonly SemaphoreSlim _lock = new(1, 1);
     private readonly IPrimitiveEventStore _primitiveEventStore = Guard.AgainstNull(primitiveEventStore);
     private readonly RecallOptions _recallOptions = Guard.AgainstNull(Guard.AgainstNull(recallOptions).Value);
+    private readonly ILogger<MemoryProjectionEventService> _logger = logger ?? NullLogger<MemoryProjectionEventService>.Instance;
     private int[] _managedThreadIds = [];
     private int _roundRobinIndex;
 
@@ -183,7 +185,7 @@ public class MemoryProjectionEventService(ILogger<MemoryProjectionEventService> 
             var index = Math.Abs((primitiveEvent.CorrelationId ?? primitiveEvent.Id).GetHashCode()) % _managedThreadIds.Length;
             var managedThreadId = _managedThreadIds[index];
 
-            logger.LogDebug($"[{primitiveEvent.Id}] : hash = {primitiveEvent.Id.GetHashCode()} / index = {index} / managed thread id = {managedThreadId}");
+            _logger.LogDebug($"[{primitiveEvent.Id}] : hash = {primitiveEvent.Id.GetHashCode()} / index = {index} / managed thread id = {managedThreadId}");
 
             projectionExecutionContext.AddPrimitiveEvent(primitiveEvent, managedThreadId);
         }
