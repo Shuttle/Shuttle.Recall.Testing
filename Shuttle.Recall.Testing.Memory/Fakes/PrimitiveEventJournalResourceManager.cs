@@ -1,5 +1,5 @@
 ﻿using System.Transactions;
-using Shuttle.Core.Contract;
+using Shuttle.Contract;
 
 namespace Shuttle.Recall.Testing.Memory.Fakes;
 

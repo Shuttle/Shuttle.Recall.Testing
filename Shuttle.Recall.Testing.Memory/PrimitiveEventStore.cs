@@ -1,4 +1,4 @@
-﻿using Shuttle.Core.Contract;
+﻿using Shuttle.Contract;
 using Shuttle.Recall.Testing.Memory.Fakes;
 
 namespace Shuttle.Recall.Testing.Memory;

@@ -2,7 +2,7 @@
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
-using Shuttle.Core.Contract;
+using Shuttle.Contract;
 
 namespace Shuttle.Recall.Testing;
 

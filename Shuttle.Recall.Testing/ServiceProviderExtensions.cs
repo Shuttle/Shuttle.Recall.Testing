@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Shuttle.Core.Contract;
+using Shuttle.Contract;
 
 namespace Shuttle.Recall.Testing;
 

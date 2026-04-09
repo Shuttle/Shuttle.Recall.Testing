@@ -1,4 +1,4 @@
-﻿using Shuttle.Core.Pipelines;
+﻿using Shuttle.Pipelines;
 using Shuttle.Recall.Testing.Order;
 
 namespace Shuttle.Recall.Testing;

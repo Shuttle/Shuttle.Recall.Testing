@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Shuttle.Core.Contract;
+using Shuttle.Contract;
 using Shuttle.Recall.Testing.Order;
 
 namespace Shuttle.Recall.Testing;
