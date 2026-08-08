@@ -14,7 +14,7 @@
 
   <PropertyGroup>
     <Description>Contains base fixtures to verify Shuttle.Recall `IEventStore` and `IEventProcessor` implementations.</Description>
-    <Version>21.0.3</Version>
+    <Version>22.0.0-alpha.1</Version>
     <PackageProjectUrl>https://github.com/Shuttle/Shuttle.Recall.Testing</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Shuttle/Shuttle.Recall.Testing.git</RepositoryUrl>
     <PackageTags></PackageTags>
