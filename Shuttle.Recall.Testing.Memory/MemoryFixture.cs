@@ -36,6 +36,20 @@ public class MemoryFixture : RecallFixture
     }
 
     [Test]
+    public async Task Should_be_able_to_exercise_immediate_consistency_async()
+    {
+        var services = new ServiceCollection()
+            .AddSingleton<IPrimitiveEventStore>(new PrimitiveEventStore())
+            .AddSingleton<IPrimitiveEventRepository, MemoryPrimitiveEventRepository>()
+            .AddSingleton<IHostedService, MemoryFixtureHostedService>()
+            .AddSingleton<MemoryProjectionEventService>()
+            .AddSingleton<IProjectionEventService>(sp => sp.GetRequiredService<MemoryProjectionEventService>());
+
+        await ExerciseImmediateConsistencyAsync(new RecallFixtureOptions(services)
+            .WithEventProcessingHandlerTimeout(TimeSpan.FromSeconds(5)));
+    }
+
+    [Test]
     public async Task Should_be_able_to_exercise_event_processing_with_delay_async()
     {
         var services = new ServiceCollection()

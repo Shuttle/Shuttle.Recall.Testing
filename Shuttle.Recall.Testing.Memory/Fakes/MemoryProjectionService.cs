@@ -137,6 +137,13 @@ public class MemoryProjectionEventService(IOptions<RecallOptions> recallOptions,
         return Task.CompletedTask;
     }
 
+    // This naive implementation does not track immediately-handled events, so the eventual event processor will
+    // simply re-invoke the handler for this projection/event pair -- harmless for the fixtures that use it.
+    public Task ProjectionEventHandledAsync(string projectionName, Guid eventId, CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
+
     public async Task AcknowledgeAsync(IPipelineContext<AcknowledgeEvent> pipelineContext, CancellationToken cancellationToken = default)
     {
         var projectionEvent = Guard.AgainstNull(pipelineContext).Pipeline.State.GetProjectionEvent();

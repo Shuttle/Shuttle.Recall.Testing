@@ -612,6 +612,120 @@ public class RecallFixture
         Assert.That(handler.HasTimedOut, Is.False, "The handler has timed out.  Not all of the events have been processed by the projection.");
     }
 
+    /// <summary>
+    ///     Event processing where a single `ItemAdded` event is added and three projections are registered:
+    ///     `recall-fixture-immediate-success` and `recall-fixture-immediate-failure` use immediate consistency,
+    ///     `recall-fixture-eventual-only` does not.
+    ///     `recall-fixture-immediate-success` handles the event synchronously, before `SaveAsync` returns.
+    ///     `recall-fixture-immediate-failure` throws when handled immediately (raising `ImmediateConsistencyFailed`),
+    ///     but is picked up and successfully handled by the eventual event processor once it is started.
+    ///     `recall-fixture-eventual-only` is unaffected by the other two and is only ever handled by the eventual
+    ///     event processor.
+    /// </summary>
+    public async Task ExerciseImmediateConsistencyAsync(RecallFixtureOptions recallFixtureOptions)
+    {
+        var immediateSuccessCount = 0;
+        var immediateFailureAttemptCount = 0;
+        var immediateFailureSuccessCount = 0;
+        var eventualOnlyCount = 0;
+        var immediateConsistencyFailures = new List<string>();
+
+        var serviceProvider = Guard.AgainstNull(recallFixtureOptions).Services
+            .AddRecall(options =>
+            {
+                options.EventProcessing.ImmediateConsistency.Enabled = true;
+                options.EventProcessing.ImmediateConsistency.IncludedProjections.Add("recall-fixture-immediate-success");
+                options.EventProcessing.ImmediateConsistency.IncludedProjections.Add("recall-fixture-immediate-failure");
+
+                options.EventProcessing.ImmediateConsistencyFailed += (eventArgs, _) =>
+                {
+                    immediateConsistencyFailures.Add(eventArgs.ProjectionName);
+
+                    return Task.CompletedTask;
+                };
+            })
+            .AddProjection("recall-fixture-immediate-success", builder =>
+            {
+                builder.AddEventHandler(async (IEventHandlerContext<ItemAdded> context) =>
+                {
+                    immediateSuccessCount++;
+
+                    await Task.CompletedTask;
+                });
+            })
+            .AddProjection("recall-fixture-immediate-failure", builder =>
+            {
+                // The first call is the synchronous, immediate attempt made during 'SaveAsync' -- it fails.
+                // Any subsequent call is the eventual event processor's retry -- it succeeds.
+                builder.AddEventHandler(async (IEventHandlerContext<ItemAdded> context) =>
+                {
+                    immediateFailureAttemptCount++;
+
+                    if (immediateFailureAttemptCount == 1)
+                    {
+                        throw new ApplicationException("Simulated immediate consistency failure.");
+                    }
+
+                    immediateFailureSuccessCount++;
+
+                    await Task.CompletedTask;
+                });
+            })
+            .AddProjection("recall-fixture-eventual-only", builder =>
+            {
+                builder.AddEventHandler(async (IEventHandlerContext<ItemAdded> context) =>
+                {
+                    eventualOnlyCount++;
+
+                    await Task.CompletedTask;
+                });
+            })
+            .Services
+            .BuildServiceProvider();
+
+        await (recallFixtureOptions.StartingAsync?.Invoke(serviceProvider) ?? Task.CompletedTask);
+
+        await serviceProvider.StartHostedServicesAsync().ConfigureAwait(false);
+
+        var eventStore = serviceProvider.GetRequiredService<IEventStore>();
+
+        await eventStore.RemoveAsync(OrderAId).ConfigureAwait(false);
+
+        var order = new Order.Order(OrderAId);
+        var orderStream = await eventStore.GetAsync(OrderAId).ConfigureAwait(false);
+
+        orderStream.Add(order.AddItem("item-1", 1, 100));
+
+        await eventStore.SaveAsync(orderStream).ConfigureAwait(false);
+
+        // Immediate consistency runs synchronously as part of 'SaveAsync' -- no event processor has been started yet.
+        Assert.That(immediateSuccessCount, Is.EqualTo(1), "The immediately-consistent projection should have been invoked synchronously during 'SaveAsync'.");
+        Assert.That(immediateFailureAttemptCount, Is.EqualTo(1), "The failing immediately-consistent projection should have been attempted synchronously during 'SaveAsync'.");
+        Assert.That(immediateFailureSuccessCount, Is.EqualTo(0), "The failing immediately-consistent projection should not yet have succeeded.");
+        Assert.That(immediateConsistencyFailures, Is.EqualTo(new[] { "recall-fixture-immediate-failure" }), "The 'ImmediateConsistencyFailed' event should have been raised for the failing projection only.");
+        Assert.That(eventualOnlyCount, Is.EqualTo(0), "The eventual-only projection should not run before the event processor has started.");
+
+        var processor = serviceProvider.GetRequiredService<IEventProcessor>();
+
+        var timeout = DateTime.Now.Add(recallFixtureOptions.EventProcessingHandlerTimeout);
+        var hasTimedOut = false;
+
+        await processor.StartAsync().ConfigureAwait(false);
+
+        while ((immediateFailureSuccessCount == 0 || eventualOnlyCount == 0) && !hasTimedOut)
+        {
+            Thread.Sleep(250);
+
+            hasTimedOut = DateTime.Now > timeout;
+        }
+
+        await processor.StopAsync().ConfigureAwait(false);
+
+        Assert.That(hasTimedOut, Is.False, "The fixture has timed out.  Not all of the events have been processed by the projections.");
+        Assert.That(immediateFailureSuccessCount, Is.EqualTo(1), "The projection that failed immediately should have been picked up and successfully handled by the eventual event processor.");
+        Assert.That(eventualOnlyCount, Is.EqualTo(1), "The eventual-only projection should have processed the event via the eventual event processor.");
+    }
+
     public async Task ExercisePrimitiveEventSequencerAsync(RecallFixtureOptions recallFixtureOptions)
     {
         const int count = 10;
